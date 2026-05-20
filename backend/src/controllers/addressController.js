@@ -36,7 +36,7 @@ const addressController = {
       const [result] = await db.query(
         `INSERT INTO enderecos (usuario_id, titulo, cep, bairro, rua, numero, complemento, principal) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [usuario_id, titulo, cep, bairro, rua, numero, complemento, principal || false]
+        [usuario_id, titulo, cep, bairro, rua, numero, complemento || null, principal || false]
       );
 
       const [newAddress] = await db.query("SELECT * FROM enderecos WHERE id = ?", [result.insertId]);
@@ -66,7 +66,7 @@ const addressController = {
       }
       await db.query(
         "UPDATE enderecos SET titulo=?, cep=?, bairro=?, rua=?, numero=?, complemento=?, principal=? WHERE id=?",
-        [titulo, cep, bairro, rua, numero, complemento, principal || false, id]
+        [titulo, cep, bairro, rua, numero, complemento || null, principal || false, id]
       );
       const [updated] = await db.query("SELECT * FROM enderecos WHERE id = ?", [id]);
       return res.status(200).json({ message: "Endereço atualizado!", address: updated[0] });
