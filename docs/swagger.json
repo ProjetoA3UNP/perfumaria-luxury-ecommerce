@@ -164,6 +164,119 @@
           "200": { "description": "Removido com sucesso." }
         }
       }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Catálogo"],
+        "summary": "Busca detalhes e pirâmide olfativa de um perfume específico",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Perfume retornado com sucesso." },
+          "404": { "description": "Perfume não encontrado." }
+        }
+      }
+    },
+    "/api/favorites": {
+      "get": {
+        "tags": ["Favoritos (Protegido)"],
+        "summary": "Lista a wishlist (favoritos) do usuário",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Lista de produtos retornada." }
+        }
+      },
+      "post": {
+        "tags": ["Favoritos (Protegido)"],
+        "summary": "Adiciona um perfume aos favoritos",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "produto_id": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Adicionado aos favoritos com sucesso." }
+        }
+      }
+    },
+    "/api/favorites/{produto_id}": {
+      "delete": {
+        "tags": ["Favoritos (Protegido)"],
+        "summary": "Remove um perfume dos favoritos",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "produto_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Removido dos favoritos." }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": ["Pedidos e Histórico (Protegido)"],
+        "summary": "Lista o histórico de compras concluídas do usuário",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Histórico completo com itens do pedido retornado." }
+        }
+      }
+    },
+    "/api/orders/create-payment-intent": {
+      "post": {
+        "tags": ["Checkout e Stripe (Protegido)"],
+        "summary": "Gera intenção de pagamento na Stripe e devolve o Client Secret para o Cartão",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Token de intenção de pagamento gerado com sucesso pela Stripe." },
+          "400": { "description": "Carrinho vazio ou estoque insuficiente na hora do pagamento." }
+        }
+      }
+    },
+    "/api/orders/checkout": {
+      "post": {
+        "tags": ["Checkout e Stripe (Protegido)"],
+        "summary": "Finaliza o pedido após confirmação de pagamento do Frontend",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endereco_id": { "type": "integer", "example": 2 },
+                  "paymentIntentId": { "type": "string", "example": "pi_3MxtJgLkd..." }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Pedido salvo com sucesso e carrinho esvaziado!" },
+          "400": { "description": "Problemas na transação final." }
+        }
+      }
     }
   }
 }
