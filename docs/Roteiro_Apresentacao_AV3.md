@@ -99,7 +99,7 @@ Vamos criar a conta do professor avaliador no banco.
 ```json
 {
   "titulo": "Universidade Potiguar",
-  "cep": "59056-000",
+  "cep": "59056000",
   "bairro": "Lagoa Nova",
   "rua": "Av. Senador Salgado Filho",
   "numero": "1610",
