@@ -1,0 +1,123 @@
+/* ESTILOS ESPECÍFICOS LOGIN CANVAS */
+.auth-page.canvas-style {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.canvas-logo-container {
+  margin-bottom: 20px;
+  text-align: center;
+  width: 100%;
+}
+
+.canvas-logo {
+  width: 200px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+.auth-card.canvas-card {
+  border: 1px solid #555;
+  border-radius: 25px;
+  box-shadow: none;
+  background-color: transparent;
+  padding: 40px 40px;
+  width: 100%;
+  max-width: 480px;
+  box-sizing: border-box;
+}
+
+.canvas-card h1 {
+  font-family: 'Times New Roman', Times, serif;
+  color: #8c2b53;
+  font-size: 28px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.canvas-card .subtitle {
+  font-family: 'Times New Roman', Times, serif;
+  color: #555;
+  font-size: 14px;
+  text-transform: uppercase;
+  text-align: left;
+  margin-bottom: 30px;
+  letter-spacing: 0.5px;
+}
+
+.canvas-form label {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: #000;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.canvas-form input {
+  border: 1px solid #555 !important;
+  border-radius: 20px !important;
+  padding: 12px 15px !important;
+  font-family: Arial, sans-serif;
+  margin-top: 6px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.forgot-password-container {
+  text-align: right;
+  margin-top: -5px;
+  margin-bottom: 30px;
+}
+
+.forgot-password-link {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11px;
+  color: #555;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+}
+
+.canvas-btn {
+  background-color: #8c2b53 !important;
+  border-radius: 10px !important;
+  width: 220px !important;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 16px !important;
+  text-transform: uppercase;
+  padding: 12px !important;
+  color: white !important;
+  border: none !important;
+  cursor: pointer;
+}
+
+.canvas-btn:hover {
+  background-color: #6a203f !important;
+}
+
+.canvas-link {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  color: #555 !important;
+  margin-top: 25px !important;
+  text-align: center;
+}
+
+.canvas-link a {
+  color: #8c2b53 !important;
+  font-weight: bold;
+  text-decoration: none;
+}
