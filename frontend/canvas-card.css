@@ -1,0 +1,113 @@
+/* ESTILOS ESPECÍFICOS DO PRODUCT CARD DO CANVAS */
+.product-card.canvas-product-card {
+  border: 1px solid #555;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: left;
+  background-color: #fff;
+  min-height: 380px;
+}
+
+.canvas-product-card .canvas-favorite {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.canvas-product-card .icon-coracao {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.canvas-product-card .canvas-product-image {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  margin-bottom: 12px;
+  margin-top: 15px;
+}
+
+.canvas-card-info {
+  flex-grow: 1;
+}
+
+.canvas-product-card .canvas-brand {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: bold;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #000;
+  margin: 0 0 4px 0;
+}
+
+.canvas-product-card .canvas-nome {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 11px;
+  color: #555;
+  text-transform: uppercase;
+  font-weight: normal;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.canvas-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 15px;
+}
+
+.canvas-price-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-product-card .canvas-price {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: bold;
+  font-size: 16px;
+  color: #000;
+  margin: 0 0 2px 0;
+}
+
+.canvas-product-card .canvas-installment {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 9px;
+  color: #555;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.canvas-product-card .canvas-bag-button {
+  background-color: #d8b8c8;
+  border: none;
+  border-radius: 8px;
+  width: 45px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
+}
+
+.canvas-product-card .canvas-bag-button:hover {
+  background-color: #c9a5b6;
+}
+
+.canvas-bag-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0); /* transforma o ícone da sacola em preto */
+}
