@@ -13,6 +13,14 @@ function Product() {
   const [variacaoSelecionada, setVariacaoSelecionada] = useState(null)
   const [erro, setErro] = useState("")
 
+  // Verificar se o usuário logado é admin
+  const isAdmin = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("usuarioLogado"))
+      return user && user.tipo_perfil?.toUpperCase() === 'ADMIN'
+    } catch { return false }
+  })()
+
   useEffect(() => {
     async function carregarProduto() {
       try {
@@ -97,9 +105,11 @@ function Product() {
         {/* INFO */}
         <div className="product-detail-info" style={{ flex: '1', position: 'relative' }}>
 
-          <button className="product-favorite" onClick={favoritar} style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer' }}>
-            <img src={coracaoIcon} alt="Favoritar" style={{ width: '28px', height: '28px' }} />
-          </button>
+          {!isAdmin && (
+            <button className="product-favorite" onClick={favoritar} style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer' }}>
+              <img src={coracaoIcon} alt="Favoritar" style={{ width: '28px', height: '28px' }} />
+            </button>
+          )}
 
           <h1 style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '24px', textTransform: 'uppercase', margin: '0 0 5px 0', color: '#000' }}>
             {produto.marca}
@@ -167,12 +177,14 @@ function Product() {
             </details>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '30px' }}>
-            <button className="sacola-button" onClick={adicionarSacola} style={{ backgroundColor: '#d8b8c8', color: '#000', border: 'none', borderRadius: '8px', padding: '12px 25px', width: '220px', fontSize: '14px', fontFamily: "'Times New Roman', Times, serif", fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-              SACOLA
-              <img src={sacolaIcon} alt="Sacola" style={{ width: '18px', height: '18px', filter: 'brightness(0)' }} />
-            </button>
-          </div>
+          {!isAdmin && (
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '30px' }}>
+              <button className="sacola-button" onClick={adicionarSacola} style={{ backgroundColor: '#d8b8c8', color: '#000', border: 'none', borderRadius: '8px', padding: '12px 25px', width: '220px', fontSize: '14px', fontFamily: "'Times New Roman', Times, serif", fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                SACOLA
+                <img src={sacolaIcon} alt="Sacola" style={{ width: '18px', height: '18px', filter: 'brightness(0)' }} />
+              </button>
+            </div>
+          )}
 
         </div>
       </div>
