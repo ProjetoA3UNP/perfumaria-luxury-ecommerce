@@ -1,6 +1,25 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 function Admin() {
+  const navigate = useNavigate()
+
+  // Verificar se o usuário é admin
+  const [autorizado, setAutorizado] = useState(false)
+  useEffect(() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("usuarioLogado"))
+      if (user && user.tipo_perfil?.toUpperCase() === 'ADMIN') {
+        setAutorizado(true)
+      } else {
+        alert("Acesso negado. Apenas administradores podem acessar esta página.")
+        navigate("/")
+      }
+    } catch {
+      navigate("/login")
+    }
+  }, [navigate])
+
   const [produto, setProduto] = useState({
     nome: "",
     marca: "",
@@ -90,6 +109,8 @@ function Admin() {
 
     setCodigoGerado(codigo)
   }
+
+  if (!autorizado) return null
 
   return (
     <section className="admin-page">
