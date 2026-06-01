@@ -317,7 +317,7 @@ function Header() {
               className="icon-img" 
               viewBox="0 0 24 24" 
               fill="none" 
-              stroke="black" 
+              stroke={location.pathname === '/admin' ? "#96305a" : "black"} 
               strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round" 
