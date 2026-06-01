@@ -118,6 +118,14 @@ function FormEndereco({ initial, onSave, onCancel, salvando }) {
 function Profile() {
   const navigate = useNavigate()
   const [abaAtiva, setAbaAtiva] = useState("dados")
+
+  // Verificar se o usuário logado é admin
+  const isAdmin = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("usuarioLogado"))
+      return user && user.tipo_perfil?.toUpperCase() === 'ADMIN'
+    } catch { return false }
+  })()
   const [userData, setUserData] = useState(null)
   const [enderecos, setEnderecos] = useState([])
   const [pedidos, setPedidos] = useState([])
@@ -229,7 +237,7 @@ function Profile() {
 
         {/* Abas */}
         <div style={{ display: "flex", borderBottom: "2px solid #eee", marginBottom: "30px" }}>
-          {[{ id: "dados", label: "Meus Dados" }, { id: "pedidos", label: "Meus Pedidos" }].map(aba => (
+          {[{ id: "dados", label: "Meus Dados" }, ...(!isAdmin ? [{ id: "pedidos", label: "Meus Pedidos" }] : [])].map(aba => (
             <button key={aba.id} onClick={() => handleAba(aba.id)} style={{
               padding: "12px 28px", background: "none", border: "none", cursor: "pointer",
               fontFamily: "'Cinzel', serif", fontSize: "14px", textTransform: "uppercase",
@@ -275,35 +283,30 @@ function Profile() {
             )}
           </div>
 
-          {/* Endereços */}
-          <div className="profile-box">
-            <h3>Endereços</h3>
-            {enderecos.length === 0 ? (
-              <p className="address">Nenhum endereço cadastrado.</p>
-            ) : enderecos.map(end => (
-              <div key={end.id} style={{ marginBottom: "16px", paddingBottom: "16px", borderBottom: "1px solid #f0f0f0" }}>
-                <p className="address">
-                  <strong>{end.titulo?.toUpperCase()}:</strong> {end.rua}, {end.bairro}, {end.numero}
-                  {end.complemento ? ` - ${end.complemento}` : ""} — CEP: {end.cep}
-                </p>
-                {Boolean(end.principal) && <p className="main-address">(Endereço principal)</p>}
-                <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-                  <button onClick={() => setModalEndereco(end)} style={{ fontSize: "12px", padding: "5px 14px" }}>Editar</button>
-                  <button onClick={() => removerEndereco(end.id)} style={{ fontSize: "12px", padding: "5px 14px", background: "#fdecea", color: "#c0392b", border: "1px solid #e74c3c" }}>Remover</button>
+          {/* Endereços — apenas para clientes */}
+          {!isAdmin && (
+            <div className="profile-box">
+              <h3>Endereços</h3>
+              {enderecos.length === 0 ? (
+                <p className="address">Nenhum endereço cadastrado.</p>
+              ) : enderecos.map(end => (
+                <div key={end.id} style={{ marginBottom: "16px", paddingBottom: "16px", borderBottom: "1px solid #f0f0f0" }}>
+                  <p className="address">
+                    <strong>{end.titulo?.toUpperCase()}:</strong> {end.rua}, {end.bairro}, {end.numero}
+                    {end.complemento ? ` - ${end.complemento}` : ""} — CEP: {end.cep}
+                  </p>
+                  {Boolean(end.principal) && <p className="main-address">(Endereço principal)</p>}
+                  <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
+                    <button onClick={() => setModalEndereco(end)} style={{ fontSize: "12px", padding: "5px 14px" }}>Editar</button>
+                    <button onClick={() => removerEndereco(end.id)} style={{ fontSize: "12px", padding: "5px 14px", background: "#fdecea", color: "#c0392b", border: "1px solid #e74c3c" }}>Remover</button>
+                  </div>
                 </div>
+              ))}
+              <div className="profile-actions" style={{ marginTop: "10px" }}>
+                <button onClick={() => setModalEndereco("novo")}>Adicionar Endereço</button>
               </div>
-            ))}
-            <div className="profile-actions" style={{ marginTop: "10px" }}>
-              <button onClick={() => setModalEndereco("novo")}>Adicionar Endereço</button>
             </div>
-          </div>
-
-          {/* Cartões — apenas visual */}
-          <div className="profile-box">
-            <h3>Cartões</h3>
-            <p className="empty-card">Nenhum cartão cadastrado</p>
-            <button style={{ opacity: 0.5, cursor: "not-allowed" }} title="Em breve">Adicionar Cartão</button>
-          </div>
+          )}
         </>)}
 
         {/* ── ABA MEUS PEDIDOS ── */}

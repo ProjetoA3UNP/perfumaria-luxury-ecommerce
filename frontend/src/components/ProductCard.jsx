@@ -17,10 +17,19 @@ function ProductCard({
   preco,
   descricao,
   isFavoritos = false,
+  isAdmin = false,
 }) {
   const navigate = useNavigate()
   const { atualizarBadge, atualizarFavoritosBadge } = useContext(CartContext)
   const [mensagem, setMensagem] = useState("")
+
+  // Detectar admin automaticamente
+  const adminCheck = isAdmin || (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("usuarioLogado"))
+      return user && user.tipo_perfil?.toUpperCase() === 'ADMIN'
+    } catch { return false }
+  })()
 
   function formatarPreco(valor) {
     return Number(valor).toFixed(2).replace(".", ",")
@@ -85,16 +94,18 @@ function ProductCard({
     <div className="product-card canvas-product-card" onClick={() => navigate(`/produto/${id}`)}>
       {mensagem && <div className="card-message">{mensagem}</div>}
 
-      <button
-        className="favorite canvas-favorite"
-        onClick={isFavoritos ? removerFavorito : favoritar}
-      >
-        {isFavoritos ? (
-          <img src={lixeiraIcon} alt="Remover" className="icon-favorite icon-coracao" />
-        ) : (
-          <img src={coracaoIcon} alt="Favoritar" className="icon-favorite icon-coracao" />
-        )}
-      </button>
+      {!adminCheck && (
+        <button
+          className="favorite canvas-favorite"
+          onClick={isFavoritos ? removerFavorito : favoritar}
+        >
+          {isFavoritos ? (
+            <img src={lixeiraIcon} alt="Remover" className="icon-favorite icon-coracao" />
+          ) : (
+            <img src={coracaoIcon} alt="Favoritar" className="icon-favorite icon-coracao" />
+          )}
+        </button>
+      )}
 
       <img src={imagem} alt={nome} className="product-image canvas-product-image" />
 
@@ -112,9 +123,11 @@ function ProductCard({
           </p>
           <p className="installment canvas-installment">OU 8X DE R$ {precoParcelado}</p>
         </div>
-        <button className="bag-button canvas-bag-button" onClick={adicionarSacola}>
-          <img src={sacolaIcon} alt="Adicionar" className="canvas-bag-icon" />
-        </button>
+        {!adminCheck && (
+          <button className="bag-button canvas-bag-button" onClick={adicionarSacola}>
+            <img src={sacolaIcon} alt="Adicionar" className="canvas-bag-icon" />
+          </button>
+        )}
       </div>
     </div>
   )
