@@ -30,7 +30,7 @@ function Product() {
     } catch { return false }
   })()
 
-  const isLogado = !!localStorage.getItem("token")
+  const isLogado = !!localStorage.getItem("usuarioLogado")
 
   useEffect(() => {
     async function carregarProduto() {

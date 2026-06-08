@@ -296,8 +296,8 @@ function Header() {
             <svg 
               className="icon-img" 
               viewBox="0 0 24 24" 
-              fill={location.pathname === '/sacola' ? "black" : "none"} 
-              stroke="black" 
+              fill={location.pathname === '/sacola' ? "none" : "none"} 
+              stroke={location.pathname === '/sacola' ? "#96305a" : "black"} 
               strokeWidth="2" 
               strokeLinecap="round" 
               strokeLinejoin="round" 
