@@ -291,7 +291,7 @@ function Header() {
           </svg>
         </Link>
 
-        {!isAdmin && (
+        {!isAdmin && isLogado && (
           <Link to="/sacola" className="cart-icon-container" style={{ position: 'relative' }}>
             <svg 
               className="icon-img" 
