@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import api from "../services/api"
 import "./address.css"
 
@@ -26,6 +26,8 @@ const FRETE_POR_UF = {
 
 function Address() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const cupom_codigo = location.state?.cupom_codigo || null
 
   const [enderecosSalvos, setEnderecosSalvos] = useState([])
   const [enderecoSelecionadoId, setEnderecoSelecionadoId] = useState(null)
@@ -173,7 +175,7 @@ function Address() {
       }
     }
 
-    navigate("/pagamento", { state: { endereco: enderecoParaPagamento, frete } })
+    navigate("/pagamento", { state: { endereco: enderecoParaPagamento, frete, cupom_codigo } })
   }
 
   return (

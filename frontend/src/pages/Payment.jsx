@@ -10,7 +10,7 @@ import "./address.css"
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
 
 // --- Componente interno que tem acesso ao contexto do Stripe ---
-function CheckoutForm({ endereco, atualizarBadge }) {
+function CheckoutForm({ endereco, atualizarBadge, cupom_codigo }) {
   const stripe = useStripe()
   const elements = useElements()
   const navigate = useNavigate()
@@ -49,7 +49,8 @@ function CheckoutForm({ endereco, atualizarBadge }) {
         const response = await api.post("/orders/checkout", {
           endereco_id: endereco?.id || null,
           forma_pagamento: "CARTAO_CREDITO",
-          stripe_payment_id: paymentIntent.id
+          stripe_payment_id: paymentIntent.id,
+          cupom_codigo: cupom_codigo || null
         })
         atualizarBadge()
         navigate("/pedido-concluido", {
@@ -95,6 +96,7 @@ function Payment() {
   const location = useLocation()
   const { atualizarBadge } = useContext(CartContext)
   const endereco = location.state?.endereco || {}
+  const cupom_codigo = location.state?.cupom_codigo || null
 
   const [clientSecret, setClientSecret] = useState("")
   const [valorTotal, setValorTotal] = useState(0)
@@ -188,7 +190,7 @@ function Payment() {
 
           {clientSecret ? (
             <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-              <CheckoutForm endereco={endereco} atualizarBadge={atualizarBadge} />
+              <CheckoutForm endereco={endereco} atualizarBadge={atualizarBadge} cupom_codigo={cupom_codigo} />
             </Elements>
           ) : !erroInicio ? (
             <p style={{ textAlign: "center", color: "#888", marginTop: "30px" }}>

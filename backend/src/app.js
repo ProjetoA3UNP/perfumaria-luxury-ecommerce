@@ -14,6 +14,7 @@ const favoriteRoutes = require("./routes/favoriteRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const addressRoutes = require("./routes/addressRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const couponRoutes = require("./routes/couponRoutes");
 const authMiddleware = require("./middlewares/authMiddleware");
 
 // Importações do Swagger
@@ -30,6 +31,7 @@ app.use("/api/favorites", authMiddleware, favoriteRoutes);
 app.use("/api/orders", authMiddleware, orderRoutes);
 app.use("/api/addresses", authMiddleware, addressRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/coupons", authMiddleware, couponRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", service: "essence-api" });

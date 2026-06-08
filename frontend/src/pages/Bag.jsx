@@ -23,7 +23,8 @@ function Bag() {
   const [loading, setLoading] = useState(true)
   const [cep, setCep] = useState("")
   const [cupom, setCupom] = useState("")
-  const [desconto, setDesconto] = useState(0)
+  const [cupomData, setCupomData] = useState(null)
+  const [cupomErro, setCupomErro] = useState("")
   const [freteInfo, setFreteInfo] = useState(null)
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [erroCep, setErroCep] = useState("")
@@ -109,14 +110,22 @@ function Bag() {
     }
   }
 
-  function aplicarCupom() {
-    if (cupom.toUpperCase() === "DESC10") {
-      setDesconto(0.10)
-      alert("Cupom DESC10 aplicado com sucesso!")
-    } else {
-      setDesconto(0)
-      alert("Cupom inválido!")
+  async function aplicarCupom() {
+    if (!cupom.trim()) return
+    setCupomErro("")
+    setCupomData(null)
+    try {
+      const res = await api.post('/coupons/validate', { codigo: cupom.trim() })
+      setCupomData(res.data)
+    } catch (error) {
+      setCupomErro(error.response?.data?.error || "Cupom inválido.")
     }
+  }
+
+  function removerCupom() {
+    setCupomData(null)
+    setCupomErro("")
+    setCupom("")
   }
 
   if (loading) {
@@ -133,8 +142,12 @@ function Bag() {
   }, 0)
 
   const valorFrete = freteInfo ? freteInfo.valor : 0
-  const valorDesconto = subtotal * desconto
-  const total = subtotal - valorDesconto + valorFrete
+  const valorDesconto = cupomData
+    ? (cupomData.desconto_percentual
+        ? subtotal * (Number(cupomData.desconto_percentual) / 100)
+        : Math.min(Number(cupomData.desconto_valor), subtotal))
+    : 0
+  const total = Math.max(subtotal - valorDesconto + valorFrete, 0)
 
   if (sacola.length === 0) {
     return (
@@ -235,15 +248,31 @@ function Bag() {
         {/* CUPOM */}
         <div>
           <label style={{ display: 'block', fontSize: '12px', textTransform: 'uppercase', marginBottom: '8px' }}>Possui Cupom?</label>
-          <div style={{ display: 'flex', border: '1px solid #333', borderRadius: '8px', overflow: 'hidden' }}>
-            <input 
-              type="text" 
-              value={cupom} 
-              onChange={(e) => setCupom(e.target.value)} 
-              style={{ border: 'none', outline: 'none', padding: '10px', flex: '1', fontFamily: "'Times New Roman', Times, serif" }} 
-            />
-            <button onClick={aplicarCupom} style={{ background: '#eee', border: 'none', padding: '0 15px', cursor: 'pointer', fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '12px' }}>Aplicar</button>
-          </div>
+          {cupomData ? (
+            <div style={{ border: '1px solid #27ae60', borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0fdf4' }}>
+              <div>
+                <strong style={{ color: '#27ae60' }}>✓ {cupomData.codigo}</strong>
+                <span style={{ fontSize: '12px', color: '#555', marginLeft: '8px' }}>
+                  {cupomData.desconto_percentual ? `${cupomData.desconto_percentual}% off` : `R$ ${formatarPreco(cupomData.desconto_valor)} off`}
+                </span>
+              </div>
+              <button onClick={removerCupom} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', border: `1px solid ${cupomErro ? '#c0392b' : '#333'}`, borderRadius: '8px', overflow: 'hidden' }}>
+                <input 
+                  type="text" 
+                  value={cupom} 
+                  onChange={(e) => { setCupom(e.target.value); setCupomErro("") }} 
+                  placeholder="Digite o código"
+                  style={{ border: 'none', outline: 'none', padding: '10px', flex: '1', fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase' }} 
+                />
+                <button onClick={aplicarCupom} style={{ background: '#eee', border: 'none', padding: '0 15px', cursor: 'pointer', fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '12px' }}>Aplicar</button>
+              </div>
+              {cupomErro && <p style={{ fontSize: '11px', color: '#c0392b', margin: '4px 0 0' }}>{cupomErro}</p>}
+            </>
+          )}
         </div>
 
         {/* CAIXA DE RESUMO (A caixa "vazia" do Canvas agora tem utilidade!) */}
@@ -262,9 +291,9 @@ function Bag() {
             </span>
           </div>
 
-          {desconto > 0 && (
+          {cupomData && valorDesconto > 0 && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: 'green' }}>
-              <span>Desconto (Cupom)</span>
+              <span>Desconto ({cupomData.codigo})</span>
               <span>- R$ {formatarPreco(valorDesconto)}</span>
             </div>
           )}
@@ -278,7 +307,7 @@ function Bag() {
         </div>
 
         <button
-          onClick={() => navigate("/endereco", { state: { cep: cep.replace(/\D/g, ""), frete: freteInfo } })}
+          onClick={() => navigate("/endereco", { state: { cep: cep.replace(/\D/g, ""), frete: freteInfo, cupom_codigo: cupomData?.codigo || null } })}
           disabled={!freteInfo || buscandoCep}
           style={{
             backgroundColor: freteInfo ? '#d8b8c8' : '#e0e0e0',

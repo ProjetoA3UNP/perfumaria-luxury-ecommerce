@@ -87,7 +87,7 @@ const orderController = {
   // Passo 2: Após confirmação da Stripe, salvar o pedido no banco
   async checkout(req, res) {
     const usuario_id = req.user.id;
-    const { endereco_id, forma_pagamento, stripe_payment_id } = req.body;
+    const { endereco_id, forma_pagamento, stripe_payment_id, cupom_codigo } = req.body;
 
     const connection = await db.getConnection();
     try {
@@ -119,16 +119,38 @@ const orderController = {
         );
       }
 
-      // 4. Calcula total
+      // 4. Calcula subtotal
       let valor_total = 0;
       for (const item of itens) {
         valor_total += Number(item.preco) * item.quantidade;
       }
 
-      // 5. Resolve o ID do endereço de entrega
+      // 5. Validar e aplicar cupom (se informado)
+      let cupom_id = null;
+      let desconto_aplicado = 0;
+      if (cupom_codigo && cupom_codigo.trim() !== '') {
+        const [cupomRows] = await connection.query(
+          `SELECT id, desconto_percentual, desconto_valor, validade, ativo FROM cupons WHERE codigo = ?`,
+          [cupom_codigo.trim().toUpperCase()]
+        );
+        if (cupomRows.length > 0) {
+          const cupom = cupomRows[0];
+          if (cupom.ativo && new Date(cupom.validade) >= new Date()) {
+            cupom_id = cupom.id;
+            if (cupom.desconto_percentual) {
+              desconto_aplicado = valor_total * (Number(cupom.desconto_percentual) / 100);
+            } else if (cupom.desconto_valor) {
+              desconto_aplicado = Math.min(Number(cupom.desconto_valor), valor_total);
+            }
+          }
+        }
+      }
+
+      valor_total = Math.max(valor_total - desconto_aplicado, 0);
+
+      // 6. Resolve o ID do endereço de entrega
       let endereco_entrega_id = endereco_id;
       if (!endereco_entrega_id) {
-        // Se não veio, usa o endereço principal do usuário
         const [endReq] = await connection.query(
           `SELECT id FROM enderecos WHERE usuario_id = ? ORDER BY principal DESC, id DESC LIMIT 1`,
           [usuario_id]
@@ -137,12 +159,12 @@ const orderController = {
         endereco_entrega_id = endReq[0].id;
       }
 
-      // 6. Cria a Venda
+      // 7. Cria a Venda
       const numero_pedido = "PED-" + Date.now().toString().slice(-6);
       const [vendaResult] = await connection.query(`
-        INSERT INTO vendas (usuario_id, numero_pedido, valor_total, forma_pagamento, endereco_entrega_id, stripe_payment_id, status)
-        VALUES (?, ?, ?, ?, ?, ?, 'PAGO')
-      `, [usuario_id, numero_pedido, valor_total, forma_pagamento || 'CARTAO_CREDITO', endereco_entrega_id, stripe_payment_id || null]);
+        INSERT INTO vendas (usuario_id, numero_pedido, valor_total, forma_pagamento, endereco_entrega_id, stripe_payment_id, cupom_id, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'PAGO')
+      `, [usuario_id, numero_pedido, valor_total, forma_pagamento || 'CARTAO_CREDITO', endereco_entrega_id, stripe_payment_id || null, cupom_id]);
 
       const venda_id = vendaResult.insertId;
 
