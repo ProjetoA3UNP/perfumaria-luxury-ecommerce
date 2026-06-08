@@ -166,6 +166,62 @@ const productController = {
       console.error(error);
       return res.status(500).json({ error: "Erro ao consultar perfume." });
     }
+  },
+
+  // 5. US18: Editar Produto (atualizar info, preço, estoque, ativar/desativar)
+  async updateProduct(req, res) {
+    const { id } = req.params;
+    const { nome, descricao, ingredientes, ocasiao_ideal, ativo, variacoes } = req.body;
+
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 1. Atualizar dados do produto
+      const campos = [];
+      const valores = [];
+
+      if (nome !== undefined) { campos.push('nome = ?'); valores.push(nome); }
+      if (descricao !== undefined) { campos.push('descricao = ?'); valores.push(descricao); }
+      if (ingredientes !== undefined) { campos.push('ingredientes = ?'); valores.push(ingredientes); }
+      if (ocasiao_ideal !== undefined) { campos.push('ocasiao_ideal = ?'); valores.push(ocasiao_ideal); }
+      if (ativo !== undefined) { campos.push('ativo = ?'); valores.push(ativo ? 1 : 0); }
+
+      if (campos.length > 0) {
+        valores.push(id);
+        await connection.query(
+          `UPDATE produtos SET ${campos.join(', ')} WHERE id = ?`,
+          valores
+        );
+      }
+
+      // 2. Atualizar variações (preço e estoque)
+      if (variacoes && Array.isArray(variacoes)) {
+        for (const v of variacoes) {
+          if (v.id && (v.preco !== undefined || v.estoque_qtd !== undefined)) {
+            const vCampos = [];
+            const vValores = [];
+            if (v.preco !== undefined) { vCampos.push('preco = ?'); vValores.push(v.preco); }
+            if (v.estoque_qtd !== undefined) { vCampos.push('estoque_qtd = ?'); vValores.push(v.estoque_qtd); }
+            vValores.push(v.id);
+            await connection.query(
+              `UPDATE produto_variacoes SET ${vCampos.join(', ')} WHERE id = ? AND produto_id = ${id}`,
+              vValores
+            );
+          }
+        }
+      }
+
+      await connection.commit();
+      return res.status(200).json({ message: 'Produto atualizado com sucesso!' });
+
+    } catch (error) {
+      await connection.rollback();
+      console.error('Erro ao atualizar produto:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar produto.' });
+    } finally {
+      connection.release();
+    }
   }
 };
 

@@ -42,6 +42,12 @@ function Admin() {
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // === Estado da aba Produtos ===
+  const [produtosList, setProdutosList] = useState([])
+  const [produtosLoading, setProdutosLoading] = useState(false)
+  const [produtosEditados, setProdutosEditados] = useState({})
+  const [salvandoProduto, setSalvandoProduto] = useState(null)
+
   // === Estado do formulário de cadastro (aba Cadastrar) ===
   const [produto, setProduto] = useState({
     nome: "", marca: "", descricao: "", tamanho: "", preco: "", nomeImagem: "",
@@ -82,6 +88,101 @@ function Admin() {
     }
     fetchMetrics()
   }, [autorizado])
+
+  // Carregar lista de produtos (aba Produtos)
+  useEffect(() => {
+    if (!autorizado || abaAtiva !== "produtos") return
+    async function fetchProdutos() {
+      setProdutosLoading(true)
+      try {
+        const res = await api.get("/products")
+        // Para cada produto, buscar detalhes com variações
+        const detalhados = await Promise.all(
+          res.data.map(async (p) => {
+            try {
+              const det = await api.get(`/products/${p.id}`)
+              return det.data
+            } catch {
+              return { ...p, variacoes: [{ id: p.variacao_id, volume_ml: p.volume_ml, preco: p.preco, estoque_qtd: p.estoque_qtd }] }
+            }
+          })
+        )
+        setProdutosList(detalhados)
+      } catch (err) {
+        console.error("Erro ao carregar produtos:", err)
+      } finally {
+        setProdutosLoading(false)
+      }
+    }
+    fetchProdutos()
+  }, [autorizado, abaAtiva])
+
+  // Funções da aba Produtos
+  function handleProdutoEdit(produtoId, campo, valor) {
+    setProdutosEditados(prev => ({
+      ...prev,
+      [produtoId]: { ...(prev[produtoId] || {}), [campo]: valor }
+    }))
+  }
+
+  function handleVariacaoEdit(produtoId, variacaoId, campo, valor) {
+    setProdutosEditados(prev => {
+      const atual = prev[produtoId] || {}
+      const vars = atual.variacoes || {}
+      return {
+        ...prev,
+        [produtoId]: {
+          ...atual,
+          variacoes: {
+            ...vars,
+            [variacaoId]: { ...(vars[variacaoId] || {}), [campo]: valor }
+          }
+        }
+      }
+    })
+  }
+
+  async function salvarProduto(produtoId) {
+    const edits = produtosEditados[produtoId]
+    if (!edits) return
+
+    setSalvandoProduto(produtoId)
+    try {
+      const body = {}
+      if (edits.nome !== undefined) body.nome = edits.nome
+      if (edits.ativo !== undefined) body.ativo = edits.ativo
+
+      if (edits.variacoes) {
+        body.variacoes = Object.entries(edits.variacoes).map(([id, data]) => ({
+          id: Number(id), ...data
+        }))
+      }
+
+      await api.put(`/products/${produtoId}`, body)
+
+      // Atualizar lista local
+      const det = await api.get(`/products/${produtoId}`)
+      setProdutosList(prev => prev.map(p => p.id === produtoId ? det.data : p))
+      setProdutosEditados(prev => { const n = {...prev}; delete n[produtoId]; return n })
+      alert("Produto atualizado!")
+    } catch (err) {
+      alert(err.response?.data?.error || "Erro ao salvar produto.")
+    } finally {
+      setSalvandoProduto(null)
+    }
+  }
+
+  async function toggleAtivo(produto) {
+    setSalvandoProduto(produto.id)
+    try {
+      await api.put(`/products/${produto.id}`, { ativo: !produto.ativo })
+      setProdutosList(prev => prev.map(p => p.id === produto.id ? { ...p, ativo: !p.ativo } : p))
+    } catch (err) {
+      alert("Erro ao alterar status do produto.")
+    } finally {
+      setSalvandoProduto(null)
+    }
+  }
 
   // === Funções do formulário de cadastro ===
   function alterarCampo(event) {
@@ -190,6 +291,12 @@ function Admin() {
             onClick={() => setAbaAtiva("dashboard")}
           >
             📊 Dashboard
+          </button>
+          <button
+            className={`dash-tab ${abaAtiva === "produtos" ? "active" : ""}`}
+            onClick={() => setAbaAtiva("produtos")}
+          >
+            🧴 Produtos
           </button>
           <button
             className={`dash-tab ${abaAtiva === "cadastrar" ? "active" : ""}`}
@@ -383,6 +490,125 @@ function Admin() {
               </>
             ) : (
               <p className="dash-empty">Erro ao carregar métricas.</p>
+            )}
+          </div>
+        )}
+
+        {/* ========== ABA PRODUTOS (US18) ========== */}
+        {abaAtiva === "produtos" && (
+          <div className="dash-content">
+            <h2 className="dash-section-title">Gerenciar Produtos</h2>
+            {produtosLoading ? (
+              <p className="dash-empty">Carregando produtos...</p>
+            ) : produtosList.length === 0 ? (
+              <p className="dash-empty">Nenhum produto encontrado.</p>
+            ) : (
+              <div className="dash-table-wrap">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Nome</th>
+                      <th>Marca</th>
+                      <th>Variação</th>
+                      <th>Preço (R$)</th>
+                      <th>Estoque</th>
+                      <th>Status</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {produtosList.map(p => {
+                      const edits = produtosEditados[p.id] || {}
+                      const variacoes = p.variacoes || []
+                      const temEdicao = !!produtosEditados[p.id]
+
+                      return variacoes.length > 0 ? variacoes.map((v, idx) => (
+                        <tr key={`${p.id}-${v.id}`} style={{ opacity: p.ativo === false || p.ativo === 0 ? 0.5 : 1 }}>
+                          {idx === 0 && (
+                            <>
+                              <td rowSpan={variacoes.length}>{p.id}</td>
+                              <td rowSpan={variacoes.length}>{p.nome}</td>
+                              <td rowSpan={variacoes.length}>{p.marca}</td>
+                            </>
+                          )}
+                          <td>{v.volume_ml}ml</td>
+                          <td>
+                            <input
+                              type="number"
+                              step="0.01"
+                              defaultValue={Number(v.preco).toFixed(2)}
+                              onChange={(e) => handleVariacaoEdit(p.id, v.id, 'preco', Number(e.target.value))}
+                              style={{ width: '90px', padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'right' }}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              defaultValue={v.estoque_qtd}
+                              onChange={(e) => handleVariacaoEdit(p.id, v.id, 'estoque_qtd', Number(e.target.value))}
+                              style={{ width: '65px', padding: '4px 6px', border: '1px solid #ddd', borderRadius: '4px', textAlign: 'center' }}
+                            />
+                          </td>
+                          {idx === 0 && (
+                            <>
+                              <td rowSpan={variacoes.length}>
+                                <button
+                                  onClick={() => toggleAtivo(p)}
+                                  disabled={salvandoProduto === p.id}
+                                  style={{
+                                    padding: '4px 10px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold',
+                                    backgroundColor: p.ativo ? '#d1fae5' : '#fee2e2',
+                                    color: p.ativo ? '#059669' : '#dc2626'
+                                  }}
+                                >
+                                  {p.ativo ? 'Ativo' : 'Inativo'}
+                                </button>
+                              </td>
+                              <td rowSpan={variacoes.length}>
+                                <button
+                                  onClick={() => salvarProduto(p.id)}
+                                  disabled={!temEdicao || salvandoProduto === p.id}
+                                  style={{
+                                    padding: '5px 12px', border: 'none', borderRadius: '6px', cursor: temEdicao ? 'pointer' : 'not-allowed',
+                                    backgroundColor: temEdicao ? '#96305a' : '#e0e0e0',
+                                    color: temEdicao ? '#fff' : '#999', fontSize: '12px', fontWeight: 'bold'
+                                  }}
+                                >
+                                  {salvandoProduto === p.id ? '...' : 'Salvar'}
+                                </button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      )) : (
+                        <tr key={p.id} style={{ opacity: p.ativo === false || p.ativo === 0 ? 0.5 : 1 }}>
+                          <td>{p.id}</td>
+                          <td>{p.nome}</td>
+                          <td>{p.marca}</td>
+                          <td>—</td>
+                          <td>{formatarReal(p.preco)}</td>
+                          <td>{p.estoque_qtd}</td>
+                          <td>
+                            <button
+                              onClick={() => toggleAtivo(p)}
+                              disabled={salvandoProduto === p.id}
+                              style={{
+                                padding: '4px 10px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold',
+                                backgroundColor: p.ativo ? '#d1fae5' : '#fee2e2',
+                                color: p.ativo ? '#059669' : '#dc2626'
+                              }}
+                            >
+                              {p.ativo ? 'Ativo' : 'Inativo'}
+                            </button>
+                          </td>
+                          <td>—</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}

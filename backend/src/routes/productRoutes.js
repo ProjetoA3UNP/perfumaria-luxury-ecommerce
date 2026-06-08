@@ -14,6 +14,9 @@ router.get('/', productController.getProducts);
 // [ADMIN / US17] Adiciona um novo perfume ao catálogo — requer autenticação + perfil admin
 router.post('/', authMiddleware, adminMiddleware, productController.createProduct);
 
+// [ADMIN / US18] Editar produto existente — requer autenticação + perfil admin
+router.put('/:id', authMiddleware, adminMiddleware, productController.updateProduct);
+
 // [CLIENTE] Rota Dinâmica Única
 router.get('/:id', productController.getProductById);
 
