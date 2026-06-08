@@ -21,6 +21,7 @@ function Product() {
   const [hoverNota, setHoverNota] = useState(0)
   const [enviandoAvaliacao, setEnviandoAvaliacao] = useState(false)
   const [avaliacaoMsg, setAvaliacaoMsg] = useState("")
+  const [podeAvaliar, setPodeAvaliar] = useState(false)
 
   // Verificar se o usuário logado é admin
   const isAdmin = (() => {
@@ -61,6 +62,25 @@ function Product() {
     }
     if (id) carregarAvaliacoes()
   }, [id])
+
+  // Verificar se pode avaliar (só para logados)
+  useEffect(() => {
+    async function verificarPermissao() {
+      try {
+        const res = await api.get(`/reviews/can-review/${id}`)
+        setPodeAvaliar(res.data.podeAvaliar)
+        if (res.data.avaliacaoExistente) {
+          setMinhaAvaliacao({
+            nota: res.data.avaliacaoExistente.nota,
+            comentario: res.data.avaliacaoExistente.comentario || ""
+          })
+        }
+      } catch {
+        setPodeAvaliar(false)
+      }
+    }
+    if (id && isLogado && !isAdmin) verificarPermissao()
+  }, [id, isLogado, isAdmin])
 
   if (erro || !produto) {
     return (
@@ -256,8 +276,8 @@ function Product() {
           </div>
         )}
 
-        {/* Formulário de avaliação (só para logados não-admin) */}
-        {isLogado && !isAdmin && (
+        {/* Formulário de avaliação (só para quem comprou) */}
+        {isLogado && !isAdmin && podeAvaliar && (
           <form onSubmit={enviarAvaliacao} style={{ background: '#faf7f8', borderRadius: '12px', padding: '20px', marginBottom: '30px', border: '1px solid #eee' }}>
             <p style={{ fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px', fontWeight: 'bold' }}>Deixe sua avaliação</p>
 

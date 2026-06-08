@@ -67,6 +67,36 @@ const reviewController = {
       console.error('Erro ao buscar avaliações:', error);
       return res.status(500).json({ error: 'Erro ao buscar avaliações.' });
     }
+  },
+
+  // Verificar se o usuário pode avaliar (comprou o produto?)
+  async canReview(req, res) {
+    const usuario_id = req.user.id;
+    const { produto_id } = req.params;
+
+    try {
+      const [compras] = await db.query(`
+        SELECT v.id FROM vendas v
+        JOIN itens_venda iv ON iv.venda_id = v.id
+        JOIN produto_variacoes pv ON iv.variacao_id = pv.id
+        WHERE v.usuario_id = ? AND pv.produto_id = ? AND v.status IN ('PAGO','PROCESSANDO','ENVIADO','ENTREGUE')
+        LIMIT 1
+      `, [usuario_id, produto_id]);
+
+      const [jaAvaliou] = await db.query(
+        'SELECT id, nota, comentario FROM avaliacoes WHERE usuario_id = ? AND produto_id = ?',
+        [usuario_id, produto_id]
+      );
+
+      return res.status(200).json({
+        podeAvaliar: compras.length > 0,
+        jaAvaliou: jaAvaliou.length > 0,
+        avaliacaoExistente: jaAvaliou[0] || null
+      });
+    } catch (error) {
+      console.error('Erro ao verificar permissão:', error);
+      return res.status(500).json({ error: 'Erro ao verificar permissão.' });
+    }
   }
 };
 
