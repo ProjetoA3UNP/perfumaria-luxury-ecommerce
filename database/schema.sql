@@ -195,3 +195,20 @@ CREATE TABLE IF NOT EXISTS log_status_pedidos (
     CONSTRAINT fk_log_admin
         FOREIGN KEY (admin_id) REFERENCES usuarios(id)
 );
+
+-- ========================================================
+-- TABELA: avaliacoes (US11 - Avaliação de produtos)
+-- ========================================================
+CREATE TABLE IF NOT EXISTS avaliacoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    produto_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    nota INT NOT NULL,
+    comentario TEXT,
+    data_avaliacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_aval_produto
+        FOREIGN KEY (produto_id) REFERENCES produtos(id),
+    CONSTRAINT fk_aval_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    UNIQUE KEY uk_usuario_produto (usuario_id, produto_id)
+);

@@ -13,6 +13,15 @@ function Product() {
   const [variacaoSelecionada, setVariacaoSelecionada] = useState(null)
   const [erro, setErro] = useState("")
 
+  // Avaliações
+  const [avaliacoes, setAvaliacoes] = useState([])
+  const [mediaNotas, setMediaNotas] = useState(0)
+  const [totalAvaliacoes, setTotalAvaliacoes] = useState(0)
+  const [minhaAvaliacao, setMinhaAvaliacao] = useState({ nota: 0, comentario: "" })
+  const [hoverNota, setHoverNota] = useState(0)
+  const [enviandoAvaliacao, setEnviandoAvaliacao] = useState(false)
+  const [avaliacaoMsg, setAvaliacaoMsg] = useState("")
+
   // Verificar se o usuário logado é admin
   const isAdmin = (() => {
     try {
@@ -21,13 +30,14 @@ function Product() {
     } catch { return false }
   })()
 
+  const isLogado = !!localStorage.getItem("token")
+
   useEffect(() => {
     async function carregarProduto() {
       try {
         const response = await api.get(`/products/${id}`)
         setProduto(response.data)
         if (response.data.variacoes && response.data.variacoes.length > 0) {
-          // Seleciona automaticamente o menor volume
           setVariacaoSelecionada(response.data.variacoes[0])
         }
       } catch (error) {
@@ -35,6 +45,21 @@ function Product() {
       }
     }
     carregarProduto()
+  }, [id])
+
+  // Carregar avaliações
+  useEffect(() => {
+    async function carregarAvaliacoes() {
+      try {
+        const res = await api.get(`/reviews/${id}`)
+        setAvaliacoes(res.data.avaliacoes || [])
+        setMediaNotas(res.data.media || 0)
+        setTotalAvaliacoes(res.data.total || 0)
+      } catch (e) {
+        console.error("Erro ao carregar avaliações:", e)
+      }
+    }
+    if (id) carregarAvaliacoes()
   }, [id])
 
   if (erro || !produto) {
@@ -50,103 +75,130 @@ function Product() {
   }
 
   async function adicionarSacola() {
-    if (!variacaoSelecionada) {
-      alert("Por favor, selecione um tamanho.")
-      return;
-    }
+    if (!variacaoSelecionada) return
     try {
-      await api.post("/cart/add", { variacao_id: variacaoSelecionada.id, quantidade: 1 })
+      await api.post("/cart", { variacao_id: variacaoSelecionada.id, quantidade: 1 })
       atualizarBadge()
       navigate("/sacola")
     } catch (error) {
-      if (error.response && error.response.status === 401) {
+      if (error.response?.status === 401) {
         alert("Você precisa fazer login para adicionar à sacola.")
-        navigate("/login")
       } else {
         alert(error.response?.data?.error || "Erro ao adicionar à sacola.")
       }
     }
   }
 
-  async function favoritar() {
+  async function toggleFavorito() {
     try {
-      const response = await api.post("/favorites", { produto_id: produto.id })
-      alert(response.data.message)
+      const response = await api.post("/favorites/toggle", { produto_id: produto.id })
       atualizarFavoritosBadge()
-    } catch (error) {
-      if (error.response && error.response.status === 401) {
-        alert("Faça login para favoritar")
+      if (response.data.action === "added") {
+        alert("Adicionado aos favoritos!")
       } else {
-        alert("Erro ao favoritar")
+        alert("Removido dos favoritos!")
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        alert("Você precisa fazer login para favoritar.")
+      } else {
+        alert(error.response?.data?.error || "Erro ao favoritar.")
       }
     }
   }
 
+  function renderEstrelas(nota, tamanho = 18) {
+    return [1,2,3,4,5].map(i => (
+      <span key={i} style={{ color: i <= nota ? '#f59e0b' : '#ddd', fontSize: `${tamanho}px` }}>★</span>
+    ))
+  }
+
+  async function enviarAvaliacao(e) {
+    e.preventDefault()
+    if (minhaAvaliacao.nota === 0) {
+      setAvaliacaoMsg("Selecione uma nota de 1 a 5 estrelas.")
+      return
+    }
+    setEnviandoAvaliacao(true)
+    setAvaliacaoMsg("")
+    try {
+      await api.post("/reviews", {
+        produto_id: Number(id),
+        nota: minhaAvaliacao.nota,
+        comentario: minhaAvaliacao.comentario || null
+      })
+      setAvaliacaoMsg("Avaliação enviada com sucesso!")
+      setMinhaAvaliacao({ nota: 0, comentario: "" })
+      // Recarregar avaliações
+      const res = await api.get(`/reviews/${id}`)
+      setAvaliacoes(res.data.avaliacoes || [])
+      setMediaNotas(res.data.media || 0)
+      setTotalAvaliacoes(res.data.total || 0)
+    } catch (err) {
+      setAvaliacaoMsg(err.response?.data?.error || "Erro ao enviar avaliação.")
+    } finally {
+      setEnviandoAvaliacao(false)
+    }
+  }
+
   return (
-    <section className="product-page" style={{ padding: '40px 10%' }}>
+    <section className="product-page" style={{ padding: '50px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '60px', justifyContent: 'center' }}>
 
-      {/* 🔥 BREADCRUMB */}
-      <div className="breadcrumb" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', textTransform: 'uppercase', marginBottom: '30px', color: '#333' }}>
-        <Link to="/" style={{ color: '#333', textDecoration: 'none' }}>HOME</Link>
-        <span style={{ margin: '0 8px' }}>|</span>
-        <span>FAMÍLIA OLFATIVA</span>
-        <span style={{ margin: '0 8px' }}>|</span>
-        <strong>{produto.familia_olfativa}</strong>
-      </div>
-
-      {/* 🔥 CONTAINER */}
-      <div className="product-zoom-container" style={{ display: 'flex', gap: '60px', alignItems: 'flex-start' }}>
-
-        {/* ✅ APENAS UMA IMAGEM */}
-        <div className="product-main-image" style={{ flex: '1', display: 'flex', justifyContent: 'center' }}>
-          <img src={produto.imagem} alt={produto.nome} style={{ width: '100%', maxWidth: '400px', objectFit: 'contain' }} />
-        </div>
-
-        {/* INFO */}
-        <div className="product-detail-info" style={{ flex: '1', position: 'relative' }}>
-
+        {/* Imagem do Produto */}
+        <div style={{ flex: '1 1 350px', maxWidth: '450px', display: 'flex', justifyContent: 'center', position: 'relative' }}>
+          {produto.imagem && (
+            <img src={produto.imagem} alt={produto.nome} style={{ width: '100%', maxHeight: '550px', objectFit: 'contain', borderRadius: '12px' }} />
+          )}
           {!isAdmin && (
-            <button className="product-favorite" onClick={favoritar} style={{ position: 'absolute', top: 0, right: 0, background: 'none', border: 'none', cursor: 'pointer' }}>
-              <img src={coracaoIcon} alt="Favoritar" style={{ width: '28px', height: '28px' }} />
+            <button onClick={toggleFavorito} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.7)', border: 'none', borderRadius: '50%', padding: '8px', cursor: 'pointer' }}>
+              <img src={coracaoIcon} alt="Favoritar" style={{ width: '22px', height: '22px' }} />
             </button>
           )}
+        </div>
 
-          <h1 style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '24px', textTransform: 'uppercase', margin: '0 0 5px 0', color: '#000' }}>
-            {produto.marca}
-          </h1>
+        {/* Informações do Produto */}
+        <div style={{ flex: '1 1 350px', maxWidth: '500px' }}>
 
-          <p className="product-subtitle" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '20px', textTransform: 'uppercase', margin: '0 0 20px 0', color: '#555' }}>
-            {produto.nome}
+          <p style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', textTransform: 'uppercase', color: '#999', margin: '0 0 5px 0' }}>{produto.marca}</p>
+          <h1 style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '28px', textTransform: 'uppercase', margin: '0 0 5px 0' }}>{produto.nome}</h1>
+
+          {/* Estrelas resumo */}
+          {totalAvaliacoes > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+              {renderEstrelas(Math.round(mediaNotas))}
+              <span style={{ fontSize: '13px', color: '#666' }}>({totalAvaliacoes} {totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'})</span>
+            </div>
+          )}
+
+          <p style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '13px', textTransform: 'uppercase', color: '#888', margin: '0 0 5px 0' }}>
+            {produto.categoria} · {produto.familia_olfativa}
           </p>
 
-          {/* 🔥 BOTÕES DE VOLUME (SKUs) */}
-          {produto.variacoes && produto.variacoes.length > 0 && (
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-              {produto.variacoes.map(v => (
-                <button 
-                  key={v.id} 
+          {/* Variações de tamanho */}
+          {produto.variacoes && produto.variacoes.length > 1 && (
+            <div style={{ display: 'flex', gap: '8px', margin: '15px 0' }}>
+              {produto.variacoes.map((v) => (
+                <button
+                  key={v.id}
                   onClick={() => setVariacaoSelecionada(v)}
                   style={{
-                    fontFamily: "'Times New Roman', Times, serif",
-                    fontSize: '14px',
-                    padding: '8px 15px',
-                    border: '1px solid #000',
-                    backgroundColor: variacaoSelecionada?.id === v.id ? '#000' : 'transparent',
-                    color: variacaoSelecionada?.id === v.id ? '#fff' : '#000',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
+                    fontFamily: "'Times New Roman', Times, serif", fontSize: '13px', textTransform: 'uppercase',
+                    border: variacaoSelecionada?.id === v.id ? '2px solid #8c2b53' : '1px solid #ccc',
+                    backgroundColor: variacaoSelecionada?.id === v.id ? '#f9f0f4' : '#fff',
+                    color: variacaoSelecionada?.id === v.id ? '#8c2b53' : '#555'
                   }}
                 >
-                  {v.volume_ml} ML
+                  {v.volume_ml}ml
                 </button>
               ))}
             </div>
           )}
 
-          <h2 className="product-detail-price" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '28px', color: '#8c2b53', margin: '0 0 5px 0' }}>
+          <p className="price" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '32px', margin: '15px 0 5px 0', fontWeight: 'bold', color: '#333' }}>
             R$ {variacaoSelecionada ? formatarPreco(variacaoSelecionada.preco) : formatarPreco(0)}
-          </h2>
-
+          </p>
           <p className="installment" style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '18px', textTransform: 'uppercase', color: '#333', margin: '0 0 40px 0' }}>
             10X R$ {variacaoSelecionada ? formatarPreco(variacaoSelecionada.preco / 10) : formatarPreco(0)} NO CARTÃO
           </p>
@@ -187,6 +239,91 @@ function Product() {
           )}
 
         </div>
+      </div>
+
+      {/* ========== SEÇÃO DE AVALIAÇÕES (US11) ========== */}
+      <div style={{ marginTop: '60px', borderTop: '1px solid #eee', paddingTop: '40px', maxWidth: '800px', marginLeft: 'auto', marginRight: 'auto' }}>
+        <h2 style={{ fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '20px', marginBottom: '20px', textAlign: 'center' }}>
+          Avaliações {totalAvaliacoes > 0 && `(${totalAvaliacoes})`}
+        </h2>
+
+        {/* Média */}
+        {totalAvaliacoes > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+            <div style={{ fontSize: '40px', fontWeight: 'bold', color: '#333' }}>{mediaNotas}</div>
+            <div>{renderEstrelas(Math.round(mediaNotas), 24)}</div>
+            <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>{totalAvaliacoes} {totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}</p>
+          </div>
+        )}
+
+        {/* Formulário de avaliação (só para logados não-admin) */}
+        {isLogado && !isAdmin && (
+          <form onSubmit={enviarAvaliacao} style={{ background: '#faf7f8', borderRadius: '12px', padding: '20px', marginBottom: '30px', border: '1px solid #eee' }}>
+            <p style={{ fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px', fontWeight: 'bold' }}>Deixe sua avaliação</p>
+
+            {/* Seletor de estrelas */}
+            <div style={{ marginBottom: '12px' }}>
+              {[1,2,3,4,5].map(i => (
+                <span
+                  key={i}
+                  onClick={() => setMinhaAvaliacao(prev => ({ ...prev, nota: i }))}
+                  onMouseEnter={() => setHoverNota(i)}
+                  onMouseLeave={() => setHoverNota(0)}
+                  style={{ cursor: 'pointer', fontSize: '28px', color: i <= (hoverNota || minhaAvaliacao.nota) ? '#f59e0b' : '#ddd', transition: 'color 0.15s' }}
+                >
+                  ★
+                </span>
+              ))}
+              {minhaAvaliacao.nota > 0 && <span style={{ fontSize: '13px', color: '#666', marginLeft: '8px' }}>{minhaAvaliacao.nota}/5</span>}
+            </div>
+
+            <textarea
+              value={minhaAvaliacao.comentario}
+              onChange={(e) => setMinhaAvaliacao(prev => ({ ...prev, comentario: e.target.value }))}
+              placeholder="Compartilhe sua experiência com este perfume... (opcional)"
+              rows={3}
+              style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '8px', fontFamily: "'Times New Roman', Times, serif", fontSize: '14px', resize: 'vertical', boxSizing: 'border-box' }}
+            />
+
+            {avaliacaoMsg && (
+              <p style={{ fontSize: '12px', marginTop: '6px', color: avaliacaoMsg.includes('sucesso') ? '#059669' : '#c0392b' }}>
+                {avaliacaoMsg}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={enviandoAvaliacao}
+              style={{ marginTop: '10px', padding: '10px 25px', backgroundColor: '#96305a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '13px', fontWeight: 'bold' }}
+            >
+              {enviandoAvaliacao ? 'Enviando...' : 'Enviar Avaliação'}
+            </button>
+          </form>
+        )}
+
+        {/* Lista de avaliações */}
+        {avaliacoes.length === 0 ? (
+          <p style={{ textAlign: 'center', color: '#999', fontSize: '14px', fontFamily: "'Times New Roman', Times, serif" }}>
+            Nenhuma avaliação ainda. {isLogado ? 'Seja o primeiro a avaliar!' : 'Faça login para avaliar.'}
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {avaliacoes.map(av => (
+              <div key={av.id} style={{ padding: '16px', borderRadius: '10px', border: '1px solid #eee', background: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <div>
+                    <strong style={{ fontSize: '14px' }}>{av.usuario_nome}</strong>
+                    <span style={{ marginLeft: '10px' }}>{renderEstrelas(av.nota, 14)}</span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#999' }}>
+                    {new Date(av.data_avaliacao).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                {av.comentario && <p style={{ fontSize: '13px', color: '#555', margin: '4px 0 0' }}>{av.comentario}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
