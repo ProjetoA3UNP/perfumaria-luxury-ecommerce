@@ -178,3 +178,20 @@ CREATE TABLE itens_venda (
     CONSTRAINT fk_itens_venda_variacao
         FOREIGN KEY (variacao_id) REFERENCES produto_variacoes(id)
 );
+
+-- ========================================================
+-- TABELA: log_status_pedidos (Auditoria de mudanças de status)
+-- ========================================================
+CREATE TABLE IF NOT EXISTS log_status_pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    venda_id INT NOT NULL,
+    status_anterior VARCHAR(40) NOT NULL,
+    status_novo VARCHAR(40) NOT NULL,
+    admin_id INT NOT NULL,
+    admin_nome VARCHAR(120) NOT NULL,
+    data_alteracao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_log_venda
+        FOREIGN KEY (venda_id) REFERENCES vendas(id),
+    CONSTRAINT fk_log_admin
+        FOREIGN KEY (admin_id) REFERENCES usuarios(id)
+);

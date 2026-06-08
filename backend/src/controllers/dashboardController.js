@@ -19,6 +19,7 @@ const dashboardController = {
         [topFavoritadosRows],
         [pedidosRecentesRows],
         [estoqueBaixoRows],
+        [ultimosLogsRows],
       ] = await Promise.all([
 
         // === KPIs ===
@@ -104,6 +105,15 @@ const dashboardController = {
           ORDER BY pv.estoque_qtd ASC
           LIMIT 15
         `),
+
+        // Últimos 10 logs de alteração de status (auditoria)
+        db.query(`
+          SELECT l.status_anterior, l.status_novo, l.admin_nome, l.data_alteracao, v.numero_pedido
+          FROM log_status_pedidos l
+          JOIN vendas v ON l.venda_id = v.id
+          ORDER BY l.data_alteracao DESC
+          LIMIT 10
+        `),
       ]);
 
       return res.status(200).json({
@@ -122,6 +132,7 @@ const dashboardController = {
         topFavoritados: topFavoritadosRows,
         pedidosRecentes: pedidosRecentesRows,
         estoqueBaixo: estoqueBaixoRows,
+        ultimosLogs: ultimosLogsRows,
       });
 
     } catch (error) {

@@ -74,7 +74,7 @@ const authController = {
 
       // 3. Assinar o JWT Token
       const token = jwt.sign(
-        { id: user.id, tipo_perfil: user.tipo_perfil },
+        { id: user.id, nome: user.nome, tipo_perfil: user.tipo_perfil },
         process.env.JWT_SECRET || 'fallback_secret_inseguro',
         { expiresIn: '24h' }
       );

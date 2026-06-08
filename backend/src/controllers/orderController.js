@@ -233,21 +233,67 @@ const orderController = {
         return res.status(404).json({ error: 'Pedido não encontrado.' });
       }
 
-      // Validar transição (CANCELADO e ENTREGUE são estados finais)
       const statusAtual = pedido[0].status;
-      if (statusAtual === 'ENTREGUE' && status !== 'ENTREGUE') {
+
+      // Ignorar se o status é o mesmo
+      if (statusAtual === status) {
+        return res.status(200).json({ message: 'Status já está nesse valor.' });
+      }
+
+      // Validar transição (CANCELADO e ENTREGUE são estados finais)
+      if (statusAtual === 'ENTREGUE') {
         return res.status(400).json({ error: 'Pedido já entregue não pode ter status alterado.' });
       }
-      if (statusAtual === 'CANCELADO' && status !== 'CANCELADO') {
+      if (statusAtual === 'CANCELADO') {
         return res.status(400).json({ error: 'Pedido cancelado não pode ter status alterado.' });
       }
 
+      // Atualizar status
       await db.query('UPDATE vendas SET status = ? WHERE id = ?', [status, id]);
 
-      return res.status(200).json({ message: `Status atualizado para ${status}.` });
+      // Registrar log de auditoria
+      const adminId = req.user.id;
+      const adminNome = req.user.nome || 'Admin';
+      await db.query(
+        `INSERT INTO log_status_pedidos (venda_id, status_anterior, status_novo, admin_id, admin_nome)
+         VALUES (?, ?, ?, ?, ?)`,
+        [id, statusAtual, status, adminId, adminNome]
+      );
+
+      return res.status(200).json({ message: `Status atualizado: ${statusAtual} → ${status}` });
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       return res.status(500).json({ error: 'Erro ao atualizar status do pedido.' });
+    }
+  },
+
+  // ========== ADMIN: Histórico de alterações de status ==========
+  async getOrderLogs(req, res) {
+    try {
+      const { venda_id } = req.query;
+
+      let query = `
+        SELECT 
+          l.id, l.venda_id, l.status_anterior, l.status_novo,
+          l.admin_id, l.admin_nome, l.data_alteracao,
+          v.numero_pedido
+        FROM log_status_pedidos l
+        JOIN vendas v ON l.venda_id = v.id
+      `;
+      const params = [];
+
+      if (venda_id) {
+        query += ' WHERE l.venda_id = ?';
+        params.push(venda_id);
+      }
+
+      query += ' ORDER BY l.data_alteracao DESC LIMIT 50';
+
+      const [rows] = await db.query(query, params);
+      return res.status(200).json(rows);
+    } catch (error) {
+      console.error('Erro ao buscar logs:', error);
+      return res.status(500).json({ error: 'Erro ao buscar histórico de alterações.' });
     }
   }
 };

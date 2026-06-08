@@ -18,4 +18,7 @@ router.get('/admin/all', adminMiddleware, orderController.getAllOrders);
 // [ADMIN / US19] Atualizar status de um pedido
 router.patch('/admin/:id/status', adminMiddleware, orderController.updateOrderStatus);
 
+// [ADMIN] Histórico de alterações de status (auditoria)
+router.get('/admin/logs', adminMiddleware, orderController.getOrderLogs);
+
 module.exports = router;

@@ -52,6 +52,7 @@ function Admin() {
   const [pedidosList, setPedidosList] = useState([])
   const [pedidosLoading, setPedidosLoading] = useState(false)
   const [salvandoStatus, setSalvandoStatus] = useState(null)
+  const [statusLogs, setStatusLogs] = useState([])
 
   // === Estado do formulário de cadastro (aba Cadastrar) ===
   const [produto, setProduto] = useState({
@@ -195,8 +196,12 @@ function Admin() {
     async function fetchPedidos() {
       setPedidosLoading(true)
       try {
-        const res = await api.get("/orders/admin/all")
-        setPedidosList(res.data)
+        const [resPedidos, resLogs] = await Promise.all([
+          api.get("/orders/admin/all"),
+          api.get("/orders/admin/logs")
+        ])
+        setPedidosList(resPedidos.data)
+        setStatusLogs(resLogs.data)
       } catch (err) {
         console.error("Erro ao carregar pedidos:", err)
       } finally {
@@ -211,6 +216,9 @@ function Admin() {
     try {
       await api.patch(`/orders/admin/${pedidoId}/status`, { status: novoStatus })
       setPedidosList(prev => prev.map(p => p.id === pedidoId ? { ...p, status: novoStatus } : p))
+      // Recarregar logs
+      const resLogs = await api.get("/orders/admin/logs")
+      setStatusLogs(resLogs.data)
     } catch (err) {
       alert(err.response?.data?.error || "Erro ao atualizar status.")
     } finally {
@@ -527,6 +535,45 @@ function Admin() {
                     ) : <p className="dash-empty" style={{ color: "#059669" }}>✅ Todo estoque acima de 5 unidades!</p>}
                   </div>
                 </div>
+
+                {/* Log de alterações de status */}
+                {metrics.ultimosLogs && metrics.ultimosLogs.length > 0 && (
+                  <div className="dash-card" style={{ gridColumn: '1 / -1' }}>
+                    <h3 className="dash-card-title">📜 Últimas Alterações de Status</h3>
+                    <table className="dash-table">
+                      <thead>
+                        <tr>
+                          <th>Pedido</th>
+                          <th>De</th>
+                          <th></th>
+                          <th>Para</th>
+                          <th>Admin</th>
+                          <th>Data/Hora</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {metrics.ultimosLogs.map((log, i) => (
+                          <tr key={i}>
+                            <td><strong>{log.numero_pedido}</strong></td>
+                            <td>
+                              <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_anterior] || '#999') + '22', color: STATUS_COLORS[log.status_anterior] || '#999' }}>
+                                {STATUS_LABELS[log.status_anterior] || log.status_anterior}
+                              </span>
+                            </td>
+                            <td style={{ color: '#999' }}>→</td>
+                            <td>
+                              <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_novo] || '#999') + '22', color: STATUS_COLORS[log.status_novo] || '#999' }}>
+                                {STATUS_LABELS[log.status_novo] || log.status_novo}
+                              </span>
+                            </td>
+                            <td>{log.admin_nome}</td>
+                            <td style={{ fontSize: '12px', color: '#666' }}>{formatarData(log.data_alteracao)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </>
             ) : (
               <p className="dash-empty">Erro ao carregar métricas.</p>
@@ -724,6 +771,47 @@ function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Log de Auditoria */}
+            {statusLogs.length > 0 && (
+              <div style={{ marginTop: '30px' }}>
+                <h3 className="dash-section-title" style={{ fontSize: '16px' }}>📜 Histórico de Alterações</h3>
+                <div className="dash-table-wrap" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  <table className="dash-table">
+                    <thead>
+                      <tr>
+                        <th>Pedido</th>
+                        <th>De</th>
+                        <th></th>
+                        <th>Para</th>
+                        <th>Admin</th>
+                        <th>Data/Hora</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statusLogs.map(log => (
+                        <tr key={log.id}>
+                          <td><strong>{log.numero_pedido}</strong></td>
+                          <td>
+                            <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_anterior] || '#999') + '22', color: STATUS_COLORS[log.status_anterior] || '#999' }}>
+                              {STATUS_LABELS[log.status_anterior] || log.status_anterior}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '14px', color: '#999' }}>→</td>
+                          <td>
+                            <span style={{ padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_novo] || '#999') + '22', color: STATUS_COLORS[log.status_novo] || '#999' }}>
+                              {STATUS_LABELS[log.status_novo] || log.status_novo}
+                            </span>
+                          </td>
+                          <td>{log.admin_nome}</td>
+                          <td style={{ fontSize: '12px', color: '#666' }}>{formatarData(log.data_alteracao)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
