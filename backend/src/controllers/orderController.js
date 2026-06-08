@@ -194,6 +194,61 @@ const orderController = {
     } finally {
       connection.release();
     }
+  },
+
+  // ========== ADMIN: Listar todos os pedidos ==========
+  async getAllOrders(req, res) {
+    try {
+      const [vendas] = await db.query(`
+        SELECT 
+          v.id, v.numero_pedido, v.valor_total, v.forma_pagamento, v.status, v.data,
+          u.nome AS cliente_nome, u.email AS cliente_email
+        FROM vendas v
+        JOIN usuarios u ON v.usuario_id = u.id
+        ORDER BY v.data DESC
+      `);
+
+      return res.status(200).json(vendas);
+    } catch (error) {
+      console.error('Erro ao buscar todos os pedidos:', error);
+      return res.status(500).json({ error: 'Erro ao buscar pedidos.' });
+    }
+  },
+
+  // ========== ADMIN: Atualizar status do pedido ==========
+  async updateOrderStatus(req, res) {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const statusValidos = ['AGUARDANDO_PAGAMENTO', 'PAGO', 'PROCESSANDO', 'ENVIADO', 'ENTREGUE', 'CANCELADO'];
+
+    if (!status || !statusValidos.includes(status)) {
+      return res.status(400).json({ error: `Status inválido. Valores aceitos: ${statusValidos.join(', ')}` });
+    }
+
+    try {
+      // Verificar se o pedido existe
+      const [pedido] = await db.query('SELECT id, status FROM vendas WHERE id = ?', [id]);
+      if (pedido.length === 0) {
+        return res.status(404).json({ error: 'Pedido não encontrado.' });
+      }
+
+      // Validar transição (CANCELADO e ENTREGUE são estados finais)
+      const statusAtual = pedido[0].status;
+      if (statusAtual === 'ENTREGUE' && status !== 'ENTREGUE') {
+        return res.status(400).json({ error: 'Pedido já entregue não pode ter status alterado.' });
+      }
+      if (statusAtual === 'CANCELADO' && status !== 'CANCELADO') {
+        return res.status(400).json({ error: 'Pedido cancelado não pode ter status alterado.' });
+      }
+
+      await db.query('UPDATE vendas SET status = ? WHERE id = ?', [status, id]);
+
+      return res.status(200).json({ message: `Status atualizado para ${status}.` });
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar status do pedido.' });
+    }
   }
 };
 

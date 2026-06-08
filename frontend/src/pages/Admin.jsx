@@ -48,6 +48,11 @@ function Admin() {
   const [produtosEditados, setProdutosEditados] = useState({})
   const [salvandoProduto, setSalvandoProduto] = useState(null)
 
+  // === Estado da aba Pedidos ===
+  const [pedidosList, setPedidosList] = useState([])
+  const [pedidosLoading, setPedidosLoading] = useState(false)
+  const [salvandoStatus, setSalvandoStatus] = useState(null)
+
   // === Estado do formulário de cadastro (aba Cadastrar) ===
   const [produto, setProduto] = useState({
     nome: "", marca: "", descricao: "", tamanho: "", preco: "", nomeImagem: "",
@@ -184,6 +189,35 @@ function Admin() {
     }
   }
 
+  // Carregar pedidos (aba Pedidos)
+  useEffect(() => {
+    if (!autorizado || abaAtiva !== "pedidos") return
+    async function fetchPedidos() {
+      setPedidosLoading(true)
+      try {
+        const res = await api.get("/orders/admin/all")
+        setPedidosList(res.data)
+      } catch (err) {
+        console.error("Erro ao carregar pedidos:", err)
+      } finally {
+        setPedidosLoading(false)
+      }
+    }
+    fetchPedidos()
+  }, [autorizado, abaAtiva])
+
+  async function atualizarStatusPedido(pedidoId, novoStatus) {
+    setSalvandoStatus(pedidoId)
+    try {
+      await api.patch(`/orders/admin/${pedidoId}/status`, { status: novoStatus })
+      setPedidosList(prev => prev.map(p => p.id === pedidoId ? { ...p, status: novoStatus } : p))
+    } catch (err) {
+      alert(err.response?.data?.error || "Erro ao atualizar status.")
+    } finally {
+      setSalvandoStatus(null)
+    }
+  }
+
   // === Funções do formulário de cadastro ===
   function alterarCampo(event) {
     setProduto({ ...produto, [event.target.name]: event.target.value })
@@ -297,6 +331,12 @@ function Admin() {
             onClick={() => setAbaAtiva("produtos")}
           >
             🧴 Produtos
+          </button>
+          <button
+            className={`dash-tab ${abaAtiva === "pedidos" ? "active" : ""}`}
+            onClick={() => setAbaAtiva("pedidos")}
+          >
+            📋 Pedidos
           </button>
           <button
             className={`dash-tab ${abaAtiva === "cadastrar" ? "active" : ""}`}
@@ -606,6 +646,82 @@ function Admin() {
                         </tr>
                       )
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ========== ABA PEDIDOS (US19) ========== */}
+        {abaAtiva === "pedidos" && (
+          <div className="dash-content">
+            <h2 className="dash-section-title">Gerenciar Pedidos</h2>
+            {pedidosLoading ? (
+              <p className="dash-empty">Carregando pedidos...</p>
+            ) : pedidosList.length === 0 ? (
+              <p className="dash-empty">Nenhum pedido encontrado.</p>
+            ) : (
+              <div className="dash-table-wrap">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Pedido</th>
+                      <th>Cliente</th>
+                      <th>Valor</th>
+                      <th>Pagamento</th>
+                      <th>Data</th>
+                      <th>Status Atual</th>
+                      <th>Alterar Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedidosList.map(pedido => (
+                      <tr key={pedido.id}>
+                        <td><strong>{pedido.numero_pedido}</strong></td>
+                        <td>
+                          <div>{pedido.cliente_nome}</div>
+                          <small style={{ color: '#888' }}>{pedido.cliente_email}</small>
+                        </td>
+                        <td>{formatarReal(pedido.valor_total)}</td>
+                        <td>{pedido.forma_pagamento === 'CARTAO_CREDITO' ? 'Cartão' : 'PIX'}</td>
+                        <td>{formatarData(pedido.data)}</td>
+                        <td>
+                          <span style={{
+                            display: 'inline-block', padding: '4px 10px', borderRadius: '12px',
+                            fontSize: '11px', fontWeight: 'bold',
+                            backgroundColor: STATUS_COLORS[pedido.status] + '22',
+                            color: STATUS_COLORS[pedido.status],
+                            border: `1px solid ${STATUS_COLORS[pedido.status]}`
+                          }}>
+                            {STATUS_LABELS[pedido.status] || pedido.status}
+                          </span>
+                        </td>
+                        <td>
+                          {pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO' ? (
+                            <span style={{ fontSize: '12px', color: '#999' }}>Finalizado</span>
+                          ) : (
+                            <select
+                              value={pedido.status}
+                              disabled={salvandoStatus === pedido.id}
+                              onChange={(e) => atualizarStatusPedido(pedido.id, e.target.value)}
+                              style={{
+                                padding: '5px 8px', borderRadius: '6px', border: '1px solid #ddd',
+                                fontSize: '12px', cursor: 'pointer',
+                                backgroundColor: salvandoStatus === pedido.id ? '#f0f0f0' : '#fff'
+                              }}
+                            >
+                              <option value="AGUARDANDO_PAGAMENTO">Aguardando</option>
+                              <option value="PAGO">Pago</option>
+                              <option value="PROCESSANDO">Processando</option>
+                              <option value="ENVIADO">Enviado</option>
+                              <option value="ENTREGUE">Entregue</option>
+                              <option value="CANCELADO">Cancelado</option>
+                            </select>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
