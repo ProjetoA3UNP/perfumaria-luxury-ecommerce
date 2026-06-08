@@ -95,12 +95,12 @@ function Admin() {
     async function fetchProdutos() {
       setProdutosLoading(true)
       try {
-        const res = await api.get("/products")
+        const res = await api.get("/products?all=true")
         // Para cada produto, buscar detalhes com variações
         const detalhados = await Promise.all(
           res.data.map(async (p) => {
             try {
-              const det = await api.get(`/products/${p.id}`)
+              const det = await api.get(`/products/${p.id}?all=true`)
               return det.data
             } catch {
               return { ...p, variacoes: [{ id: p.variacao_id, volume_ml: p.volume_ml, preco: p.preco, estoque_qtd: p.estoque_qtd }] }
@@ -161,7 +161,7 @@ function Admin() {
       await api.put(`/products/${produtoId}`, body)
 
       // Atualizar lista local
-      const det = await api.get(`/products/${produtoId}`)
+      const det = await api.get(`/products/${produtoId}?all=true`)
       setProdutosList(prev => prev.map(p => p.id === produtoId ? det.data : p))
       setProdutosEditados(prev => { const n = {...prev}; delete n[produtoId]; return n })
       alert("Produto atualizado!")

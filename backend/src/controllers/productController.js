@@ -101,10 +101,12 @@ const productController = {
   // 3. US06: Listar Produtos (Buscando o JOIN Relacional Completo)
   async getProducts(req, res) {
     try {
+      const incluirInativos = req.query.all === 'true';
       const [rows] = await db.query(`
         SELECT 
           p.id, 
           p.nome, 
+          p.ativo,
           (SELECT MIN(preco) FROM produto_variacoes WHERE produto_id = p.id) AS preco, 
           (SELECT SUM(estoque_qtd) FROM produto_variacoes WHERE produto_id = p.id) AS estoque_qtd, 
           (SELECT id FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS variacao_id, 
@@ -122,7 +124,7 @@ const productController = {
         LEFT JOIN categorias c ON p.categoria_id = c.id
         LEFT JOIN familias_olfativas f ON p.familia_olfativa_id = f.id
         LEFT JOIN notas_olfativas n ON p.id = n.produto_id
-        WHERE p.ativo = TRUE
+        ${incluirInativos ? '' : 'WHERE p.ativo = TRUE'}
         ORDER BY p.id DESC
       `);
 
@@ -137,9 +139,10 @@ const productController = {
   async getProductById(req, res) {
     const { id } = req.params;
     try {
+      const incluirInativos = req.query.all === 'true';
       const [rows] = await db.query(`
         SELECT 
-          p.id, p.nome, p.descricao, p.ingredientes, p.ocasiao_ideal,
+          p.id, p.nome, p.descricao, p.ingredientes, p.ocasiao_ideal, p.ativo,
           m.nome AS marca, c.nome AS categoria, f.nome AS familia_olfativa,
           n.topo, n.coracao, n.base,
           (SELECT url FROM imagens_produto ip WHERE ip.produto_id = p.id AND ip.principal = 1 LIMIT 1) AS imagem
@@ -148,7 +151,7 @@ const productController = {
         LEFT JOIN categorias c ON p.categoria_id = c.id
         LEFT JOIN familias_olfativas f ON p.familia_olfativa_id = f.id
         LEFT JOIN notas_olfativas n ON p.id = n.produto_id
-        WHERE p.id = ? AND p.ativo = TRUE
+        WHERE p.id = ? ${incluirInativos ? '' : 'AND p.ativo = TRUE'}
       `, [id]);
 
       if (rows.length === 0) return res.status(404).json({ error: "Perfume não encontrado." });
