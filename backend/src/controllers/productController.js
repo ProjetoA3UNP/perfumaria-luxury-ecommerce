@@ -112,6 +112,7 @@ const productController = {
           (SELECT id FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS variacao_id, 
           (SELECT volume_ml FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS volume_ml, 
           p.descricao,
+          p.ocasiao_ideal,
           m.nome AS marca, 
           c.nome AS categoria,
           f.nome AS familia_olfativa,
