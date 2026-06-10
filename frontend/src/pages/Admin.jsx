@@ -42,6 +42,17 @@ function Admin() {
   const [metrics, setMetrics] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const [toastMessage, setToastMessage] = useState("")
+  const [toastType, setToastType] = useState("success")
+
+  function showToast(message, type = "success") {
+    setToastMessage(message)
+    setToastType(type)
+    setTimeout(() => {
+      setToastMessage("")
+    }, 3000)
+  }
+
   // === Estado da aba Produtos ===
   const [produtosList, setProdutosList] = useState([])
   const [produtosLoading, setProdutosLoading] = useState(false)
@@ -53,6 +64,23 @@ function Admin() {
   const [pedidosLoading, setPedidosLoading] = useState(false)
   const [salvandoStatus, setSalvandoStatus] = useState(null)
   const [statusLogs, setStatusLogs] = useState([])
+
+  // === Estados do Modal de Exportação ===
+  const [modalExportAberto, setModalExportAberto] = useState(false)
+  const [exportFormat, setExportFormat] = useState("pdf") // "pdf" ou "csv"
+  const [exportOptions, setExportOptions] = useState({
+    indicadores: true,
+    vendasMes: true,
+    statusPedidos: true,
+    topCategorias: true,
+    topVendidos: true,
+    topFavoritados: true,
+    pedidosRecentes: true,
+    estoqueBaixo: true,
+    produtosList: false,
+    pedidosList: false,
+    statusLogs: false
+  })
 
   // === Estado do formulário de cadastro (aba Cadastrar) ===
   const [produto, setProduto] = useState({
@@ -95,9 +123,10 @@ function Admin() {
     fetchMetrics()
   }, [autorizado])
 
-  // Carregar lista de produtos (aba Produtos)
+  // Carregar lista de produtos (aba Produtos ou ao abrir modal de exportação)
   useEffect(() => {
-    if (!autorizado || abaAtiva !== "produtos") return
+    if (!autorizado) return
+    if (abaAtiva !== "produtos" && !modalExportAberto) return
     async function fetchProdutos() {
       setProdutosLoading(true)
       try {
@@ -121,46 +150,212 @@ function Admin() {
       }
     }
     fetchProdutos()
-  }, [autorizado, abaAtiva])
+  }, [autorizado, abaAtiva, modalExportAberto])
 
-  // === Exportação de Relatórios ===
-  function exportarCSV() {
+  // === Exportação de Relatórios Customizada ===
+  function abrirModalExportar(formato) {
+    setExportFormat(formato)
+    if (abaAtiva === "dashboard") {
+      setExportOptions({
+        indicadores: true,
+        vendasMes: true,
+        statusPedidos: true,
+        topCategorias: true,
+        topVendidos: true,
+        topFavoritados: true,
+        pedidosRecentes: true,
+        estoqueBaixo: true,
+        produtosList: false,
+        pedidosList: false,
+        statusLogs: false
+      })
+    } else if (abaAtiva === "produtos") {
+      setExportOptions({
+        indicadores: false,
+        vendasMes: false,
+        statusPedidos: false,
+        topCategorias: false,
+        topVendidos: false,
+        topFavoritados: false,
+        pedidosRecentes: false,
+        estoqueBaixo: false,
+        produtosList: true,
+        pedidosList: false,
+        statusLogs: false
+      })
+    } else if (abaAtiva === "pedidos") {
+      setExportOptions({
+        indicadores: false,
+        vendasMes: false,
+        statusPedidos: false,
+        topCategorias: false,
+        topVendidos: false,
+        topFavoritados: false,
+        pedidosRecentes: false,
+        estoqueBaixo: false,
+        produtosList: false,
+        pedidosList: true,
+        statusLogs: true
+      })
+    } else {
+      setExportOptions({
+        indicadores: true,
+        vendasMes: false,
+        statusPedidos: false,
+        topCategorias: false,
+        topVendidos: false,
+        topFavoritados: false,
+        pedidosRecentes: false,
+        estoqueBaixo: false,
+        produtosList: false,
+        pedidosList: false,
+        statusLogs: false
+      })
+    }
+    setModalExportAberto(true)
+  }
+
+  function toggleExportOption(key) {
+    setExportOptions(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function setBulkOptions(grupo, valor) {
+    if (grupo === "dashboard") {
+      setExportOptions(prev => ({
+        ...prev,
+        indicadores: valor,
+        vendasMes: valor,
+        statusPedidos: valor,
+        topCategorias: valor,
+        topVendidos: valor,
+        topFavoritados: valor,
+        pedidosRecentes: valor,
+        estoqueBaixo: valor
+      }))
+    } else if (grupo === "produtos") {
+      setExportOptions(prev => ({
+        ...prev,
+        produtosList: valor
+      }))
+    } else if (grupo === "pedidos") {
+      setExportOptions(prev => ({
+        ...prev,
+        pedidosList: valor,
+        statusLogs: valor
+      }))
+    }
+  }
+
+  function processarExportacao() {
+    setModalExportAberto(false)
+    if (exportFormat === "csv") {
+      gerarCSV()
+    } else {
+      gerarPDF()
+    }
+  }
+
+  function gerarCSV() {
     if (!metrics) return;
     
-    let csv = "RELATORIO DE FATURAMENTO E VENDAS - ESSENCE\n\n";
+    let csv = "\uFEFFRELATORIO ESSENCE - EXPORTACAO CUSTOMIZADA\n";
+    csv += `Gerado em: ${new Date().toLocaleDateString("pt-BR")} as ${new Date().toLocaleTimeString("pt-BR")}\n\n`;
     
-    csv += "--- INDICADORES GERAIS ---\n";
-    csv += `Faturamento Total,R$ ${(metrics.kpis.faturamento / 100).toFixed(2)}\n`;
-    csv += `Total de Pedidos,${metrics.kpis.totalPedidos}\n`;
-    csv += `Ticket Medio,R$ ${(metrics.kpis.ticketMedio / 100).toFixed(2)}\n`;
-    csv += `Total de Clientes,${metrics.kpis.totalClientes}\n\n`;
+    if (exportOptions.indicadores) {
+      csv += "--- INDICADORES GERAIS ---\n";
+      csv += `Faturamento Total;R$ ${Number(metrics.kpis.faturamento).toFixed(2).replace('.', ',')}\n`;
+      csv += `Total de Pedidos;${metrics.kpis.totalPedidos}\n`;
+      csv += `Ticket Medio;R$ ${Number(metrics.kpis.ticketMedio).toFixed(2).replace('.', ',')}\n`;
+      csv += `Total de Clientes;${metrics.kpis.totalClientes}\n`;
+      csv += `Perfumes no Catalogo;${metrics.kpis.totalProdutos}\n`;
+      csv += `Itens em Estoque;${metrics.kpis.totalEstoque}\n\n`;
+    }
 
-    csv += "--- TOP 10 PERFUMES MAIS VENDIDOS ---\n";
-    csv += "Posicao,Perfume,Marca,Unidades Vendidas,Receita Bruta\n";
-    metrics.topVendidos.forEach((p, i) => {
-      csv += `${i+1},"${p.nome}","${p.marca}",${p.total_vendido},R$ ${(p.receita / 100).toFixed(2)}\n`;
-    });
+    if (exportOptions.topVendidos) {
+      csv += "--- TOP 10 PERFUMES MAIS VENDIDOS ---\n";
+      csv += "Posicao;Perfume;Marca;Unidades Vendidas;Receita Bruta\n";
+      metrics.topVendidos.forEach((p, i) => {
+        csv += `${i+1};"${p.nome}";"${p.marca}";${p.total_vendido};R$ ${Number(p.receita).toFixed(2).replace('.', ',')}\n`;
+      });
+      csv += "\n";
+    }
 
-    csv += "\n--- ULTIMOS PEDIDOS ---\n";
-    csv += "Pedido,Cliente,Valor,Status,Data\n";
-    metrics.pedidosRecentes.forEach(p => {
-      const dataStr = new Date(p.data).toLocaleDateString("pt-BR");
-      csv += `${p.numero_pedido},"${p.cliente}",R$ ${(p.valor_total / 100).toFixed(2)},${p.status},${dataStr}\n`;
-    });
+    if (exportOptions.topFavoritados) {
+      csv += "--- TOP 10 PERFUMES MAIS FAVORITADOS ---\n";
+      csv += "Posicao;Perfume;Marca;Total Favoritos\n";
+      metrics.topFavoritados.forEach((p, i) => {
+        csv += `${i+1};"${p.nome}";"${p.marca}";${p.total_favoritos}\n`;
+      });
+      csv += "\n";
+    }
+
+    if (exportOptions.pedidosRecentes) {
+      csv += "--- ULTIMOS PEDIDOS ---\n";
+      csv += "Pedido;Cliente;Valor;Status;Data\n";
+      metrics.pedidosRecentes.forEach(p => {
+        const dataStr = new Date(p.data).toLocaleDateString("pt-BR");
+        csv += `${p.numero_pedido};"${p.cliente}";R$ ${Number(p.valor_total).toFixed(2).replace('.', ',')};${STATUS_LABELS[p.status] || p.status};${dataStr}\n`;
+      });
+      csv += "\n";
+    }
+
+    if (exportOptions.estoqueBaixo) {
+      csv += "--- PRODUTOS COM ESTOQUE BAIXO ---\n";
+      csv += "Perfume;Marca;Volume;Estoque;Preco\n";
+      metrics.estoqueBaixo.forEach(p => {
+        csv += `"${p.nome}";"${p.marca}";${p.volume_ml}ml;${p.estoque_qtd};R$ ${Number(p.preco).toFixed(2).replace('.', ',')}\n`;
+      });
+      csv += "\n";
+    }
+
+    if (exportOptions.produtosList) {
+      csv += "--- CATALOGO DE PRODUTOS E ESTOQUE ---\n";
+      csv += "ID;Produto;Marca;Ativo;Volume;Preco;Estoque\n";
+      produtosList.forEach(p => {
+        const variacoes = p.variacoes || [];
+        variacoes.forEach(v => {
+          csv += `${p.id};"${p.nome}";"${p.marca}";${p.ativo ? 'Ativo' : 'Inativo'};${v.volume_ml}ml;R$ ${Number(v.preco).toFixed(2).replace('.', ',')};${v.estoque_qtd}\n`;
+        });
+      });
+      csv += "\n";
+    }
+
+    if (exportOptions.pedidosList) {
+      csv += "--- LISTA GERAL DE PEDIDOS ---\n";
+      csv += "Pedido;Cliente;Valor;Status;Pagamento;Data\n";
+      pedidosList.forEach(p => {
+        const dataStr = new Date(p.data).toLocaleDateString("pt-BR");
+        csv += `${p.numero_pedido};"${p.cliente_nome}";R$ ${Number(p.valor_total).toFixed(2).replace('.', ',')};${STATUS_LABELS[p.status] || p.status};${p.forma_pagamento === 'CARTAO_CREDITO' ? 'Cartao' : 'PIX'};${dataStr}\n`;
+      });
+      csv += "\n";
+    }
+
+    if (exportOptions.statusLogs) {
+      csv += "--- HISTORICO DE ALTERACOES DE STATUS (AUDITORIA) ---\n";
+      csv += "Pedido;De;Para;Admin;Data\n";
+      statusLogs.forEach(l => {
+        const dataStr = new Date(l.data_alteracao).toLocaleDateString("pt-BR");
+        csv += `${l.numero_pedido};${STATUS_LABELS[l.status_anterior] || l.status_anterior};${STATUS_LABELS[l.status_novo] || l.status_novo};"${l.admin_nome}";${dataStr}\n`;
+      });
+      csv += "\n";
+    }
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", "relatorio_faturamento_essence.csv");
+    link.setAttribute("download", `relatorio_essence_customizado_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    showToast("Relatório CSV gerado com sucesso!", "success");
   }
 
-  function exportarPDF() {
-    window.print();
+  function gerarPDF() {
+    setTimeout(() => {
+      window.print();
+    }, 150);
   }
 
   // Funções da aba Produtos
@@ -210,9 +405,10 @@ function Admin() {
       const det = await api.get(`/products/${produtoId}?all=true`)
       setProdutosList(prev => prev.map(p => p.id === produtoId ? det.data : p))
       setProdutosEditados(prev => { const n = {...prev}; delete n[produtoId]; return n })
-      alert("Produto atualizado!")
+      window.dispatchEvent(new Event("produtosAtualizados"))
+      showToast("Produto atualizado com sucesso!", "success")
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao salvar produto.")
+      showToast(err.response?.data?.error || "Erro ao salvar produto.", "error")
     } finally {
       setSalvandoProduto(null)
     }
@@ -223,16 +419,19 @@ function Admin() {
     try {
       await api.put(`/products/${produto.id}`, { ativo: !produto.ativo })
       setProdutosList(prev => prev.map(p => p.id === produto.id ? { ...p, ativo: !p.ativo } : p))
+      window.dispatchEvent(new Event("produtosAtualizados"))
+      showToast(`Produto ${!produto.ativo ? 'ativado' : 'inativado'} com sucesso!`, "success")
     } catch (err) {
-      alert("Erro ao alterar status do produto.")
+      showToast("Erro ao alterar status do produto.", "error")
     } finally {
       setSalvandoProduto(null)
     }
   }
 
-  // Carregar pedidos (aba Pedidos)
+  // Carregar pedidos (aba Pedidos ou ao abrir modal de exportação)
   useEffect(() => {
-    if (!autorizado || abaAtiva !== "pedidos") return
+    if (!autorizado) return
+    if (abaAtiva !== "pedidos" && !modalExportAberto) return
     async function fetchPedidos() {
       setPedidosLoading(true)
       try {
@@ -249,7 +448,7 @@ function Admin() {
       }
     }
     fetchPedidos()
-  }, [autorizado, abaAtiva])
+  }, [autorizado, abaAtiva, modalExportAberto])
 
   async function atualizarStatusPedido(pedidoId, novoStatus) {
     setSalvandoStatus(pedidoId)
@@ -259,9 +458,9 @@ function Admin() {
       // Recarregar logs
       const resLogs = await api.get("/orders/admin/logs")
       setStatusLogs(resLogs.data)
-      alert(`Status do pedido atualizado para "${STATUS_LABELS[novoStatus] || novoStatus}"! E-mail de notificação enviado ao cliente com sucesso.`)
+      showToast(`Status do pedido atualizado para "${STATUS_LABELS[novoStatus] || novoStatus}"! E-mail de notificação enviado ao cliente com sucesso.`, "success")
     } catch (err) {
-      alert(err.response?.data?.error || "Erro ao atualizar status.")
+      showToast(err.response?.data?.error || "Erro ao atualizar status.", "error")
     } finally {
       setSalvandoStatus(null)
     }
@@ -284,7 +483,7 @@ function Admin() {
     event.preventDefault()
     const camposObrigatorios = Object.values(produto).every((campo) => campo.trim() !== "")
     if (!camposObrigatorios || !preview) {
-      alert("Preencha todas as informações e selecione uma imagem.")
+      showToast("Preencha todas as informações e selecione uma imagem.", "error")
       return
     }
     const categoriasArray = produto.categorias.split(",").map((item) => item.trim().toLowerCase())
@@ -363,7 +562,43 @@ function Admin() {
   } : null
 
   return (
-    <section className="admin-page">
+    <section className="admin-page" style={{ position: 'relative' }}>
+      <style>{`
+        @keyframes fadeInOut {
+          0% { transform: translate(-50%, -20px); opacity: 0; }
+          15% { transform: translate(-50%, 0); opacity: 1; }
+          85% { transform: translate(-50%, 0); opacity: 1; }
+          100% { transform: translate(-50%, -20px); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Toast de Notificação Premium */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: toastType === 'success' ? '#f4fbf7' : '#fdf3f3',
+          color: toastType === 'success' ? '#059669' : '#dc2626',
+          border: `1px solid ${toastType === 'success' ? '#c2ebd9' : '#fca5a5'}`,
+          padding: '12px 24px',
+          borderRadius: '30px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          zIndex: 9999,
+          fontFamily: "'Times New Roman', Times, serif",
+          fontSize: '14px',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeInOut 3s forwards'
+        }}>
+          {toastType === 'success' ? '✓' : '✕'} {toastMessage}
+        </div>
+      )}
       <div className="admin-container">
         <h1>Painel do Administrador</h1>
 
@@ -408,13 +643,13 @@ function Admin() {
                 {/* Botões de Exportação */}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }} className="no-print">
                   <button 
-                    onClick={exportarCSV}
+                    onClick={() => abrirModalExportar("csv")}
                     style={{ padding: '10px 15px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     📥 Exportar CSV
                   </button>
                   <button 
-                    onClick={exportarPDF}
+                    onClick={() => abrirModalExportar("pdf")}
                     style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
                   >
                     🖨️ Exportar PDF
@@ -779,6 +1014,20 @@ function Admin() {
         {abaAtiva === "produtos" && (
           <div className="dash-content">
             <h2 className="dash-section-title">Gerenciar Produtos</h2>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }} className="no-print">
+              <button 
+                onClick={() => abrirModalExportar("csv")}
+                style={{ padding: '10px 15px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                📥 Exportar CSV
+              </button>
+              <button 
+                onClick={() => abrirModalExportar("pdf")}
+                style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                🖨️ Exportar PDF
+              </button>
+            </div>
             {produtosLoading ? (
               <p className="dash-empty">Carregando produtos...</p>
             ) : produtosList.length === 0 ? (
@@ -987,6 +1236,20 @@ function Admin() {
         {abaAtiva === "pedidos" && (
           <div className="dash-content">
             <h2 className="dash-section-title">Gerenciar Pedidos</h2>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }} className="no-print">
+              <button 
+                onClick={() => abrirModalExportar("csv")}
+                style={{ padding: '10px 15px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                📥 Exportar CSV
+              </button>
+              <button 
+                onClick={() => abrirModalExportar("pdf")}
+                style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                🖨️ Exportar PDF
+              </button>
+            </div>
             {pedidosLoading ? (
               <p className="dash-empty">Carregando pedidos...</p>
             ) : pedidosList.length === 0 ? (
@@ -1263,6 +1526,475 @@ function Admin() {
           </>
         )}
       </div>
+
+      {/* Container Exclusivo para Impressão PDF */}
+      {metrics && (
+        <div className="print-only-report">
+          <h1>Relatório Essence Perfumaria</h1>
+          <div className="print-report-meta">
+            Gerado em {new Date().toLocaleDateString("pt-BR")} às {new Date().toLocaleTimeString("pt-BR")} | Canal Administrativo
+          </div>
+
+          {exportOptions.indicadores && (
+            <div className="print-section">
+              <h2>Métricas e Indicadores Gerais</h2>
+              <div className="print-kpi-grid">
+                <div className="print-kpi-card">
+                  <strong>Faturamento Total</strong>
+                  {formatarReal(metrics.kpis.faturamento)}
+                </div>
+                <div className="print-kpi-card">
+                  <strong>Total de Pedidos</strong>
+                  {metrics.kpis.totalPedidos}
+                </div>
+                <div className="print-kpi-card">
+                  <strong>Ticket Médio</strong>
+                  {formatarReal(metrics.kpis.ticketMedio)}
+                </div>
+                <div className="print-kpi-card">
+                  <strong>Clientes Cadastrados</strong>
+                  {metrics.kpis.totalClientes}
+                </div>
+                <div className="print-kpi-card">
+                  <strong>Produtos Cadastrados</strong>
+                  {metrics.kpis.totalProdutos}
+                </div>
+                <div className="print-kpi-card">
+                  <strong>Estoque Total (Físico)</strong>
+                  {metrics.kpis.totalEstoque}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {exportOptions.vendasMes && vendasPorMesData && (
+            <div className="print-section print-chart-section">
+              <h2>Faturamento por Mês</h2>
+              <div className="print-chart-container" style={{ maxWidth: '600px', margin: '0 auto', height: '300px', position: 'relative' }}>
+                <Bar data={vendasPorMesData} options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { y: { beginAtZero: true, ticks: { callback: v => `R$${v}` } } }
+                }} />
+              </div>
+            </div>
+          )}
+
+          {exportOptions.statusPedidos && statusData && (
+            <div className="print-section print-chart-section">
+              <h2>Status dos Pedidos</h2>
+              <div className="print-chart-container" style={{ maxWidth: '350px', margin: '0 auto', height: '250px', position: 'relative' }}>
+                <Doughnut data={statusData} options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { position: "bottom", labels: { padding: 10, usePointStyle: true } } }
+                }} />
+              </div>
+            </div>
+          )}
+
+          {exportOptions.topCategorias && topCategoriasData && (
+            <div className="print-section print-chart-section">
+              <h2>Top Categorias Vendidas</h2>
+              <div className="print-chart-container" style={{ maxWidth: '600px', margin: '0 auto', height: '300px', position: 'relative' }}>
+                <Bar data={topCategoriasData} options={{
+                  indexAxis: "y", responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { x: { beginAtZero: true } }
+                }} />
+              </div>
+            </div>
+          )}
+
+          {exportOptions.topVendidos && (
+            <div className="print-section">
+              <h2>Top 10 Perfumes Mais Vendidos</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Ranking</th>
+                    <th>Perfume</th>
+                    <th>Marca</th>
+                    <th>Unidades Vendidas</th>
+                    <th>Receita Bruta</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.topVendidos.map((p, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}º</td>
+                      <td>{p.nome}</td>
+                      <td>{p.marca}</td>
+                      <td>{p.total_vendido}</td>
+                      <td>{formatarReal(p.receita)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.topFavoritados && (
+            <div className="print-section">
+              <h2>Top 10 Perfumes Mais Favoritados</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Ranking</th>
+                    <th>Perfume</th>
+                    <th>Marca</th>
+                    <th>Total Favoritos</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.topFavoritados.map((p, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}º</td>
+                      <td>{p.nome}</td>
+                      <td>{p.marca}</td>
+                      <td>{p.total_favoritos} ❤️</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.pedidosRecentes && (
+            <div className="print-section">
+              <h2>Últimos Pedidos Recebidos</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Forma de Pagamento</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.pedidosRecentes.map((p, i) => (
+                    <tr key={i}>
+                      <td>{p.numero_pedido}</td>
+                      <td>{p.cliente}</td>
+                      <td>{formatarReal(p.valor_total)}</td>
+                      <td>{STATUS_LABELS[p.status] || p.status}</td>
+                      <td>{p.forma_pagamento === 'CARTAO_CREDITO' ? 'Cartão' : 'PIX'}</td>
+                      <td>{formatarData(p.data)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.estoqueBaixo && (
+            <div className="print-section">
+              <h2>Alerta de Estoque Crítico (≤ 5 un)</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Perfume</th>
+                    <th>Marca</th>
+                    <th>Volume</th>
+                    <th>Quantidade Disponível</th>
+                    <th>Preço Unitário</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {metrics.estoqueBaixo.map((p, i) => (
+                    <tr key={i} style={{ color: p.estoque_qtd === 0 ? '#ef4444' : '#b45309' }}>
+                      <td>{p.nome}</td>
+                      <td>{p.marca}</td>
+                      <td>{p.volume_ml}ml</td>
+                      <td>{p.estoque_qtd === 0 ? 'SEM ESTOQUE' : `${p.estoque_qtd} un`}</td>
+                      <td>{formatarReal(p.preco)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.produtosList && (
+            <div className="print-section">
+              <h2>Catálogo Completo de Perfumes</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Perfume</th>
+                    <th>Marca</th>
+                    <th>Status</th>
+                    <th>Volume</th>
+                    <th>Preço</th>
+                    <th>Estoque</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {produtosList.map(p => {
+                    const variacoes = p.variacoes || []
+                    return variacoes.map((v, idx) => (
+                      <tr key={`${p.id}-${v.id}`} style={{ opacity: p.ativo ? 1 : 0.5 }}>
+                        {idx === 0 && (
+                          <>
+                            <td rowSpan={variacoes.length}>{p.id}</td>
+                            <td rowSpan={variacoes.length}>{p.nome}</td>
+                            <td rowSpan={variacoes.length}>{p.marca}</td>
+                            <td rowSpan={variacoes.length}>{p.ativo ? 'Ativo' : 'Inativo'}</td>
+                          </>
+                        )}
+                        <td>{v.volume_ml}ml</td>
+                        <td>{formatarReal(v.preco)}</td>
+                        <td>{v.estoque_qtd} un</td>
+                      </tr>
+                    ))
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.pedidosList && (
+            <div className="print-section">
+              <h2>Relação Geral de Pedidos</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Cliente</th>
+                    <th>E-mail</th>
+                    <th>Valor Total</th>
+                    <th>Pagamento</th>
+                    <th>Status</th>
+                    <th>Data de Criação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pedidosList.map(pedido => (
+                    <tr key={pedido.id}>
+                      <td>{pedido.numero_pedido}</td>
+                      <td>{pedido.cliente_nome}</td>
+                      <td>{pedido.cliente_email}</td>
+                      <td>{formatarReal(pedido.valor_total)}</td>
+                      <td>{pedido.forma_pagamento === 'CARTAO_CREDITO' ? 'Cartão' : 'PIX'}</td>
+                      <td>{STATUS_LABELS[pedido.status] || pedido.status}</td>
+                      <td>{formatarData(pedido.data)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {exportOptions.statusLogs && (
+            <div className="print-section">
+              <h2>Histórico de Auditoria de Status</h2>
+              <table className="print-table">
+                <thead>
+                  <tr>
+                    <th>Pedido</th>
+                    <th>Status Anterior</th>
+                    <th>Novo Status</th>
+                    <th>Administrador</th>
+                    <th>Data/Hora da Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {statusLogs.map((log, i) => (
+                    <tr key={i}>
+                      <td>{log.numero_pedido}</td>
+                      <td>{STATUS_LABELS[log.status_anterior] || log.status_anterior}</td>
+                      <td>{STATUS_LABELS[log.status_novo] || log.status_novo}</td>
+                      <td>{log.admin_nome}</td>
+                      <td>{formatarData(log.data_alteracao)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Modal de Exportação Premium Customizável */}
+      {modalExportAberto && (
+        <div className="export-modal-overlay">
+          <div className="export-modal-content">
+            <button className="export-modal-close" onClick={() => setModalExportAberto(false)}>
+              &times;
+            </button>
+            <h2>Configurar Exportação ({exportFormat.toUpperCase()})</h2>
+            <p className="export-modal-subtitle">
+              Selecione quais seções e abas você deseja incluir no seu relatório. As opções são cumulativas.
+            </p>
+
+            <div className="export-modal-sections">
+              {/* Grupo Dashboard */}
+              <div className="export-group-card">
+                <h3>📊 Aba Dashboard</h3>
+                <div className="export-bulk-actions">
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("dashboard", true)}>
+                    Marcar Tudo
+                  </button>
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("dashboard", false)}>
+                    Limpar
+                  </button>
+                </div>
+                <div className="export-checkbox-list">
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.indicadores}
+                      onChange={() => toggleExportOption("indicadores")}
+                    />
+                    <span>Indicadores Gerais (KPIs)</span>
+                  </label>
+                  {exportFormat === "pdf" && (
+                    <>
+                      <label className="export-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={exportOptions.vendasMes}
+                          onChange={() => toggleExportOption("vendasMes")}
+                        />
+                        <span>Gráfico Faturamento Mensal</span>
+                      </label>
+                      <label className="export-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={exportOptions.statusPedidos}
+                          onChange={() => toggleExportOption("statusPedidos")}
+                        />
+                        <span>Gráfico Status dos Pedidos</span>
+                      </label>
+                      <label className="export-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={exportOptions.topCategorias}
+                          onChange={() => toggleExportOption("topCategorias")}
+                        />
+                        <span>Gráfico Categorias Mais Vendidas</span>
+                      </label>
+                    </>
+                  )}
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.topVendidos}
+                      onChange={() => toggleExportOption("topVendidos")}
+                    />
+                    <span>Top 10 Vendidos</span>
+                  </label>
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.topFavoritados}
+                      onChange={() => toggleExportOption("topFavoritados")}
+                    />
+                    <span>Top 10 Favoritados</span>
+                  </label>
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.pedidosRecentes}
+                      onChange={() => toggleExportOption("pedidosRecentes")}
+                    />
+                    <span>Pedidos Recentes</span>
+                  </label>
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.estoqueBaixo}
+                      onChange={() => toggleExportOption("estoqueBaixo")}
+                    />
+                    <span>Alerta de Estoque Baixo</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Grupo Produtos */}
+              <div className="export-group-card">
+                <h3>🧴 Aba Produtos</h3>
+                <div className="export-bulk-actions">
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("produtos", true)}>
+                    Marcar Tudo
+                  </button>
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("produtos", false)}>
+                    Limpar
+                  </button>
+                </div>
+                <div className="export-checkbox-list">
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.produtosList}
+                      onChange={() => toggleExportOption("produtosList")}
+                    />
+                    <span>Lista Geral de Produtos</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Grupo Pedidos */}
+              <div className="export-group-card">
+                <h3>📋 Aba Pedidos</h3>
+                <div className="export-bulk-actions">
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("pedidos", true)}>
+                    Marcar Tudo
+                  </button>
+                  <button className="export-bulk-btn" onClick={() => setBulkOptions("pedidos", false)}>
+                    Limpar
+                  </button>
+                </div>
+                <div className="export-checkbox-list">
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.pedidosList}
+                      onChange={() => toggleExportOption("pedidosList")}
+                    />
+                    <span>Lista de Pedidos Gerais</span>
+                  </label>
+                  <label className="export-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={exportOptions.statusLogs}
+                      onChange={() => toggleExportOption("statusLogs")}
+                    />
+                    <span>Log de Auditoria de Status</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="export-modal-actions">
+              <button className="export-btn-cancel" onClick={() => setModalExportAberto(false)}>
+                Cancelar
+              </button>
+              <button
+                className="export-btn-submit"
+                onClick={processarExportacao}
+                disabled={
+                  !Object.values(exportOptions).some(Boolean) ||
+                  (exportOptions.produtosList && produtosLoading) ||
+                  ((exportOptions.pedidosList || exportOptions.statusLogs) && pedidosLoading)
+                }
+              >
+                {(exportOptions.produtosList && produtosLoading) || ((exportOptions.pedidosList || exportOptions.statusLogs) && pedidosLoading) ? (
+                  "Carregando dados..."
+                ) : (
+                  exportFormat === "csv" ? "📥 Baixar Relatório CSV" : "🖨️ Imprimir / Gerar PDF"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

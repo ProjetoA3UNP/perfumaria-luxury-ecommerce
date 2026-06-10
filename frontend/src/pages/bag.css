@@ -76,8 +76,16 @@
 .bag-quantity button {
   background: none;
   border: none;
-  font-size: 16px;
+  color: #8c2b53;
+  font-size: 20px;
+  font-weight: bold;
   cursor: pointer;
+  padding: 0 5px;
+  transition: color 0.2s ease;
+}
+
+.bag-quantity button:hover {
+  color: #96305a;
 }
 
 /* ============================== */

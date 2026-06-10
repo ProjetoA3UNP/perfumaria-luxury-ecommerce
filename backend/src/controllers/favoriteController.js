@@ -41,6 +41,7 @@ const favoriteController = {
         SELECT 
           p.id, 
           p.nome, 
+          (SELECT id FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS variacao_id,
           (SELECT MIN(preco) FROM produto_variacoes WHERE produto_id = p.id) AS preco,
           (SELECT volume_ml FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS volume_ml,
           (SELECT url FROM imagens_produto WHERE produto_id = p.id AND principal = TRUE LIMIT 1) AS imagem,

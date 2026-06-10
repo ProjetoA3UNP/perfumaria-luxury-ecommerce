@@ -32,6 +32,17 @@ function Bag() {
   const navigate = useNavigate()
   const { atualizarBadge } = useContext(CartContext)
 
+  const [toastMessage, setToastMessage] = useState("")
+  const [toastType, setToastType] = useState("success")
+
+  function showToast(message, type = "success") {
+    setToastMessage(message)
+    setToastType(type)
+    setTimeout(() => {
+      setToastMessage("")
+    }, 3000)
+  }
+
   async function carregarSacola() {
     try {
       const response = await api.get('/cart')
@@ -57,8 +68,10 @@ function Bag() {
       await api.delete(`/cart/remove/${variacao_id}`)
       carregarSacola()
       atualizarBadge()
+      showToast("Produto removido da sacola.", "success")
     } catch (error) {
       console.error("Erro ao remover produto", error)
+      showToast("Erro ao remover produto.", "error")
     }
   }
 
@@ -72,6 +85,8 @@ function Bag() {
       atualizarBadge()
     } catch (error) {
       console.error("Erro ao atualizar quantidade", error)
+      const errorMsg = error.response?.data?.error || "Erro ao atualizar a quantidade."
+      showToast(errorMsg, "error")
     }
   }
 
@@ -118,8 +133,11 @@ function Bag() {
     try {
       const res = await api.post('/coupons/validate', { codigo: cupom.trim() })
       setCupomData(res.data)
+      showToast("Cupom aplicado com sucesso!", "success")
     } catch (error) {
-      setCupomErro(error.response?.data?.error || "Cupom inválido.")
+      const msg = error.response?.data?.error || "Cupom inválido."
+      setCupomErro(msg)
+      showToast(msg, "error")
     }
   }
 
@@ -127,6 +145,7 @@ function Bag() {
     setCupomData(null)
     setCupomErro("")
     setCupom("")
+    showToast("Cupom removido.", "success")
   }
 
   if (loading) {
@@ -163,7 +182,43 @@ function Bag() {
   }
 
   return (
-    <section className="bag-page">
+    <section className="bag-page" style={{ position: 'relative' }}>
+      <style>{`
+        @keyframes fadeInOut {
+          0% { transform: translate(-50%, -20px); opacity: 0; }
+          15% { transform: translate(-50%, 0); opacity: 1; }
+          85% { transform: translate(-50%, 0); opacity: 1; }
+          100% { transform: translate(-50%, -20px); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Toast de Notificação Premium */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: toastType === 'success' ? '#f4fbf7' : '#fdf3f3',
+          color: toastType === 'success' ? '#059669' : '#dc2626',
+          border: `1px solid ${toastType === 'success' ? '#c2ebd9' : '#fca5a5'}`,
+          padding: '12px 24px',
+          borderRadius: '30px',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          zIndex: 9999,
+          fontFamily: "'Times New Roman', Times, serif",
+          fontSize: '14px',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          animation: 'fadeInOut 3s forwards'
+        }}>
+          {toastType === 'success' ? '✓' : '✕'} {toastMessage}
+        </div>
+      )}
       
       {/* LADO ESQUERDO: LISTA DE PRODUTOS */}
       <div className="bag-left">

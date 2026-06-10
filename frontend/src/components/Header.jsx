@@ -59,94 +59,99 @@ function Header() {
     { titulo: "Perfume Ideal", opcoes: [{ nome: "Fazer Quiz", slug: "quiz", rota: "/quiz" }] },
   ])
 
-  useEffect(() => {
-    async function carregarDados() {
-      try {
-        const [catResponse, menuResponse] = await Promise.all([
-          api.get("/products"),
-          api.get("/products/menu-filters")
-        ])
-        
-        setCatalogo(catResponse.data)
-        
-        const data = menuResponse.data
-        setMenus([
-          {
-            titulo: "Perfumes",
-            subgrupos: [
-              {
-                subtitulo: "Perfumaria",
-                opcoes: data.categorias.filter(c => c.toLowerCase() !== "indie").map(c => ({ nome: c, slug: gerarSlug(c) }))
-              },
-              {
-                subtitulo: "Família Olfativa",
-                opcoes: data.familias.map(f => ({ nome: f, slug: gerarSlug(f) }))
-              },
-              {
-                subtitulo: "Marcas",
-                opcoes: data.marcas.map(m => ({ nome: m, slug: gerarSlug(m) }))
-              },
-            ]
-          },
-          {
-            titulo: "Corpo e Banho",
-            opcoes: [
-              { nome: "Sabonetes", slug: "sabonetes" },
-              { nome: "Hidratantes", slug: "hidratantes" },
-            ]
-          },
-          {
-            titulo: "Presentes",
-            opcoes: [
-              { nome: "Kits", slug: "kits" },
-              { nome: "Até R$100", slug: "ate-100" },
-            ]
-          },
-          {
-            titulo: "Perfume Ideal",
-            opcoes: [{ nome: "Fazer Quiz", slug: "quiz", rota: "/quiz" }],
-          }
-        ])
+  async function carregarDados() {
+    try {
+      const [catResponse, menuResponse] = await Promise.all([
+        api.get("/products"),
+        api.get("/products/menu-filters")
+      ])
+      
+      setCatalogo(catResponse.data)
+      
+      const data = menuResponse.data
+      setMenus([
+        {
+          titulo: "Perfumes",
+          subgrupos: [
+            {
+              subtitulo: "Perfumaria",
+              opcoes: data.categorias.filter(c => c.toLowerCase() !== "indie").map(c => ({ nome: c, slug: gerarSlug(c) }))
+            },
+            {
+              subtitulo: "Família Olfativa",
+              opcoes: data.familias.map(f => ({ nome: f, slug: gerarSlug(f) }))
+            },
+            {
+              subtitulo: "Marcas",
+              opcoes: data.marcas.map(m => ({ nome: m, slug: gerarSlug(m) }))
+            },
+          ]
+        },
+        {
+          titulo: "Corpo e Banho",
+          opcoes: [
+            { nome: "Sabonetes", slug: "sabonetes" },
+            { nome: "Hidratantes", slug: "hidratantes" },
+          ]
+        },
+        {
+          titulo: "Presentes",
+          opcoes: [
+            { nome: "Kits", slug: "kits" },
+            { nome: "Até R$100", slug: "ate-100" },
+          ]
+        },
+        {
+          titulo: "Perfume Ideal",
+          opcoes: [{ nome: "Fazer Quiz", slug: "quiz", rota: "/quiz" }],
+        }
+      ])
 
-        // Menu desktop com abas separadas
-        setMenusDesktop([
-          {
-            titulo: "Perfumaria",
-            opcoes: data.categorias.filter(c => c.toLowerCase() !== "indie").map(c => ({ nome: c, slug: gerarSlug(c) }))
-          },
-          {
-            titulo: "Família Olfativa",
-            opcoes: data.familias.map(f => ({ nome: f, slug: gerarSlug(f) }))
-          },
-          {
-            titulo: "Marcas",
-            opcoes: data.marcas.map(m => ({ nome: m, slug: gerarSlug(m) }))
-          },
-          {
-            titulo: "Corpo e Banho",
-            opcoes: [
-              { nome: "Sabonetes", slug: "sabonetes" },
-              { nome: "Hidratantes", slug: "hidratantes" },
-            ]
-          },
-          {
-            titulo: "Presentes",
-            opcoes: [
-              { nome: "Kits", slug: "kits" },
-              { nome: "Até R$100", slug: "ate-100" },
-            ]
-          },
-          {
-            titulo: "Perfume Ideal",
-            opcoes: [{ nome: "Fazer Quiz", slug: "quiz", rota: "/quiz" }],
-          }
-        ])
+      // Menu desktop com abas separadas
+      setMenusDesktop([
+        {
+          titulo: "Perfumaria",
+          opcoes: data.categorias.filter(c => c.toLowerCase() !== "indie").map(c => ({ nome: c, slug: gerarSlug(c) }))
+        },
+        {
+          titulo: "Família Olfativa",
+          opcoes: data.familias.map(f => ({ nome: f, slug: gerarSlug(f) }))
+        },
+        {
+          titulo: "Marcas",
+          opcoes: data.marcas.map(m => ({ nome: m, slug: gerarSlug(m) }))
+        },
+        {
+          titulo: "Corpo e Banho",
+          opcoes: [
+            { nome: "Sabonetes", slug: "sabonetes" },
+            { nome: "Hidratantes", slug: "hidratantes" },
+          ]
+        },
+        {
+          titulo: "Presentes",
+          opcoes: [
+            { nome: "Kits", slug: "kits" },
+            { nome: "Até R$100", slug: "ate-100" },
+          ]
+        },
+        {
+          titulo: "Perfume Ideal",
+          opcoes: [{ nome: "Fazer Quiz", slug: "quiz", rota: "/quiz" }],
+        }
+      ])
 
-      } catch (e) {
-        console.error("Erro na busca do header", e)
-      }
+    } catch (e) {
+      console.error("Erro na busca do header", e)
     }
+  }
+
+  useEffect(() => {
     carregarDados()
+    window.addEventListener("produtosAtualizados", carregarDados)
+    return () => {
+      window.removeEventListener("produtosAtualizados", carregarDados)
+    }
   }, [])
 
   const isLogado = !!localStorage.getItem("usuarioLogado")
@@ -162,6 +167,8 @@ function Header() {
   })()
 
   const sugestoes = catalogo.filter((produto) => {
+    if (produto.ativo === false || produto.ativo === 0) return false;
+
     const texto = `
       ${produto.nome}
       ${produto.marca || ""}
@@ -262,7 +269,7 @@ function Header() {
   function renderIcons() {
     return (
       <>
-        {!isAdmin && (
+        {!isAdmin && isLogado && (
           <Link to="/favoritos" className="cart-icon-container">
             <svg 
               className="icon-img" 

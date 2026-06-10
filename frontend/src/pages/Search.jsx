@@ -14,6 +14,8 @@ function Search() {
       try {
         const response = await api.get('/products')
         const filtrado = response.data.filter((produto) => {
+          if (produto.ativo === false || produto.ativo === 0) return false;
+
           const texto = `
             ${produto.nome}
             ${produto.marca || ""}

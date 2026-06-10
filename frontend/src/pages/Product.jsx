@@ -22,6 +22,8 @@ function Product() {
   const [enviandoAvaliacao, setEnviandoAvaliacao] = useState(false)
   const [avaliacaoMsg, setAvaliacaoMsg] = useState("")
   const [podeAvaliar, setPodeAvaliar] = useState(false)
+  const [isFavorito, setIsFavorito] = useState(false)
+  const [jaAvaliou, setJaAvaliou] = useState(false)
 
   // Verificar se o usuário logado é admin
   const isAdmin = (() => {
@@ -80,6 +82,7 @@ function Product() {
       try {
         const res = await api.get(`/reviews/can-review/${id}`)
         setPodeAvaliar(res.data.podeAvaliar)
+        setJaAvaliou(res.data.jaAvaliou)
         if (res.data.avaliacaoExistente) {
           setMinhaAvaliacao({
             nota: res.data.avaliacaoExistente.nota,
@@ -91,6 +94,22 @@ function Product() {
       }
     }
     if (id && isLogado && !isAdmin) verificarPermissao()
+  }, [id, isLogado, isAdmin])
+
+  // Verificar se o produto está nos favoritos
+  useEffect(() => {
+    async function checarFavorito() {
+      try {
+        const response = await api.get("/favorites")
+        const favoritos = response.data || []
+        setIsFavorito(favoritos.some(fav => Number(fav.id) === Number(id)))
+      } catch (error) {
+        console.error("Erro ao checar favoritos:", error)
+      }
+    }
+    if (id && isLogado && !isAdmin) {
+      checarFavorito()
+    }
   }, [id, isLogado, isAdmin])
 
   if (erro || !produto) {
@@ -123,13 +142,16 @@ function Product() {
 
   async function toggleFavorito() {
     try {
-      const response = await api.post("/favorites/toggle", { produto_id: produto.id })
-      atualizarFavoritosBadge()
-      if (response.data.action === "added") {
-        showToast("Adicionado aos favoritos!", "success")
-      } else {
+      if (isFavorito) {
+        await api.delete(`/favorites/${produto.id}`)
+        setIsFavorito(false)
         showToast("Removido dos favoritos!", "success")
+      } else {
+        await api.post("/favorites", { produto_id: produto.id })
+        setIsFavorito(true)
+        showToast("Adicionado aos favoritos!", "success")
       }
+      atualizarFavoritosBadge()
     } catch (error) {
       if (error.response?.status === 401) {
         showToast("Você precisa fazer login para favoritar.", "error")
@@ -160,6 +182,7 @@ function Product() {
         comentario: minhaAvaliacao.comentario || null
       })
       setAvaliacaoMsg("Avaliação enviada com sucesso!")
+      setJaAvaliou(true)
       setMinhaAvaliacao({ nota: 0, comentario: "" })
       // Recarregar avaliações
       const res = await api.get(`/reviews/${id}`)
@@ -219,8 +242,34 @@ function Product() {
             <img src={produto.imagem} alt={produto.nome} style={{ width: '100%', maxHeight: '550px', objectFit: 'contain', borderRadius: '12px' }} />
           )}
           {!isAdmin && (
-            <button onClick={toggleFavorito} style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.7)', border: 'none', borderRadius: '50%', padding: '8px', cursor: 'pointer' }}>
-              <img src={coracaoIcon} alt="Favoritar" style={{ width: '22px', height: '22px' }} />
+            <button 
+              onClick={toggleFavorito} 
+              style={{ 
+                position: 'absolute', 
+                top: '10px', 
+                right: '10px', 
+                background: 'rgba(255,255,255,0.9)', 
+                border: 'none', 
+                borderRadius: '50%', 
+                padding: '8px', 
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
+            >
+              <svg 
+                viewBox="0 0 24 24" 
+                fill={isFavorito ? "#8c2b53" : "none"} 
+                stroke={isFavorito ? "#8c2b53" : "#333"} 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                style={{ width: '22px', height: '22px', transition: 'all 0.2s ease' }}
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
             </button>
           )}
         </div>
@@ -326,7 +375,38 @@ function Product() {
 
         {/* Formulário de avaliação (só para quem comprou) */}
         {isLogado && !isAdmin && podeAvaliar && (
-          <form onSubmit={enviarAvaliacao} style={{ background: '#faf7f8', borderRadius: '12px', padding: '20px', marginBottom: '30px', border: '1px solid #eee' }}>
+          jaAvaliou ? (
+            <div style={{ 
+              background: '#f4fbf7', 
+              borderRadius: '12px', 
+              padding: '20px', 
+              marginBottom: '30px', 
+              border: '1px solid #c2ebd9', 
+              textAlign: 'center', 
+              color: '#27ae60', 
+              fontFamily: "'Times New Roman', Times, serif" 
+            }}>
+              <p style={{ margin: '0 0 10px 0', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '13px' }}>
+                ✨ Você já avaliou este produto. Obrigado!
+              </p>
+              <button 
+                onClick={() => setJaAvaliou(false)} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#8c2b53', 
+                  textDecoration: 'underline', 
+                  fontSize: '12px', 
+                  cursor: 'pointer', 
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase' 
+                }}
+              >
+                Editar minha avaliação
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={enviarAvaliacao} style={{ background: '#faf7f8', borderRadius: '12px', padding: '20px', marginBottom: '30px', border: '1px solid #eee' }}>
             <p style={{ fontFamily: "'Times New Roman', Times, serif", textTransform: 'uppercase', fontSize: '13px', marginBottom: '10px', fontWeight: 'bold' }}>Deixe sua avaliação</p>
 
             {/* Seletor de estrelas */}
@@ -367,12 +447,13 @@ function Product() {
               {enviandoAvaliacao ? 'Enviando...' : 'Enviar Avaliação'}
             </button>
           </form>
-        )}
+        )
+      )}
 
         {/* Lista de avaliações */}
         {avaliacoes.length === 0 ? (
           <p style={{ textAlign: 'center', color: '#999', fontSize: '14px', fontFamily: "'Times New Roman', Times, serif" }}>
-            Nenhuma avaliação ainda. {isLogado ? 'Seja o primeiro a avaliar!' : 'Faça login para avaliar.'}
+            Nenhuma avaliação ainda. {!isLogado ? 'Faça login para avaliar.' : podeAvaliar ? 'Seja o primeiro a avaliar!' : 'Apenas clientes que compraram este produto podem avaliá-lo.'}
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
