@@ -434,6 +434,55 @@
   border-top: 1px solid #eee;
 }
 
+.hamburger-subgroup {
+  border-top: 1px solid #eee;
+}
+
+.hamburger-subgroup-btn {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 30px;
+  background: none;
+  border: none;
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #96305a;
+  font-weight: bold;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s;
+}
+
+.hamburger-subgroup-btn:hover {
+  background-color: #f0e5ea;
+}
+
+.hamburger-subgroup-options {
+  display: flex;
+  flex-direction: column;
+  background-color: #f5eff2;
+  padding: 4px 0;
+}
+
+.hamburger-subgroup-options a {
+  padding: 10px 45px;
+  font-size: 13px;
+  font-family: 'Times New Roman', Times, serif;
+  color: #555;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+
+.hamburger-subgroup-options a:hover {
+  color: #96305a;
+  background-color: #ede4e9;
+  padding-left: 50px;
+}
+
 /* ============================== */
 /*  MOBILE SEARCH BAR (expansível) */
 /* ============================== */

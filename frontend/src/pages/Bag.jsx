@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useState, useEffect, useContext, useCallback } from "react"
 import { CartContext } from "../contexts/CartContext"
 import api from "../services/api"
+import "./bag.css"
 
 const FRETE_POR_UF = {
   SP: { valor: 15.90, prazo: 2 }, RJ: { valor: 15.90, prazo: 2 },
@@ -162,10 +163,10 @@ function Bag() {
   }
 
   return (
-    <section style={{ padding: '40px 10%', fontFamily: "'Times New Roman', Times, serif", display: 'flex', gap: '60px', alignItems: 'flex-start' }}>
+    <section className="bag-page">
       
       {/* LADO ESQUERDO: LISTA DE PRODUTOS */}
-      <div style={{ flex: '2' }}>
+      <div className="bag-left">
         <h1 style={{ textTransform: 'uppercase', margin: '0', fontSize: '24px' }}>SACOLA</h1>
         <p style={{ textTransform: 'uppercase', margin: '5px 0 30px 0', fontSize: '14px', color: '#555' }}>
           ({sacola.length} PRODUTO{sacola.length > 1 ? 'S' : ''})
@@ -173,14 +174,14 @@ function Bag() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {sacola.map((produto) => (
-            <div key={produto.item_carrinho_id} style={{ border: '1px solid #333', borderRadius: '12px', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div key={produto.item_carrinho_id} className="bag-product-card">
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ width: '80px', height: '80px', backgroundColor: '#f9f9f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src={produto.imagem || "https://via.placeholder.com/80?text=📦"} alt={produto.produto_nome} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+              <div className="bag-product-left">
+                <div className="bag-product-img">
+                    <img src={produto.imagem || "https://via.placeholder.com/80?text=📦"} alt={produto.produto_nome} />
                 </div>
                   
-                <div className="bag-item-info" style={{ flex: '1' }}>
+                <div style={{ flex: '1', minWidth: 0 }}>
                   <Link to={`/produto/${produto.produto_id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <h3 style={{ fontFamily: "'Times New Roman', Times, serif", fontSize: '18px', textTransform: 'uppercase', margin: '0 0 5px 0' }}>
                       {produto.produto_nome}
@@ -190,7 +191,6 @@ function Bag() {
                     {produto.volume_ml} ML
                   </p>
                   <button 
-                    className="bag-item-remove" 
                     onClick={() => removerProduto(produto.variacao_id)}
                     style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', fontSize: '12px', cursor: 'pointer', padding: 0 }}
                   >
@@ -199,11 +199,11 @@ function Bag() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
-                <div className="bag-item-quantity" style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #ccc', padding: '5px 10px' }}>
-                  <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, -1)} style={{ background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}>-</button>
+              <div className="bag-product-actions">
+                <div className="bag-quantity">
+                  <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, -1)}>-</button>
                   <span style={{ fontSize: '16px', fontFamily: "'Times New Roman', Times, serif" }}>{produto.quantidade.toString().padStart(2, '0')}</span>
-                  <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, 1)} style={{ background: 'none', border: 'none', fontSize: '16px', cursor: 'pointer' }}>+</button>
+                  <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, 1)}>+</button>
                 </div>
 
                 <strong style={{ fontSize: '18px', color: '#8c2b53' }}>
@@ -217,7 +217,7 @@ function Bag() {
       </div>
 
       {/* LADO DIREITO: RESUMO E FRETE */}
-      <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className="bag-right">
         
         {/* FRETE */}
         <div>

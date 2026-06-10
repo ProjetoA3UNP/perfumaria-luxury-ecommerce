@@ -16,6 +16,7 @@ function CheckoutForm({ endereco, atualizarBadge, cupom_codigo }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState("")
+  const [showModal, setShowModal] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -38,7 +39,8 @@ function CheckoutForm({ endereco, atualizarBadge, cupom_codigo }) {
     })
 
     if (error) {
-      setErro(error.message || "Erro ao processar pagamento.")
+      setErro(error.message || "Erro ao processar pagamento. Verifique os dados do cartão.")
+      setShowModal(true)
       setLoading(false)
       return
     }
@@ -64,6 +66,7 @@ function CheckoutForm({ endereco, atualizarBadge, cupom_codigo }) {
         })
       } catch (err) {
         setErro(err.response?.data?.error || "Pagamento aprovado, mas erro ao registrar pedido. Contate o suporte.")
+        setShowModal(true)
         setLoading(false)
       }
     }
@@ -73,10 +76,74 @@ function CheckoutForm({ endereco, atualizarBadge, cupom_codigo }) {
     <form onSubmit={handleSubmit} className="address-form" style={{ marginTop: "25px" }}>
       <PaymentElement />
 
-      {erro && (
-        <p style={{ color: "#c0392b", fontSize: "14px", marginTop: "10px", textAlign: "center" }}>
-          {erro}
-        </p>
+      {/* POPUP MODAL PREMIUM DE ERRO DE PAGAMENTO */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            borderRadius: '24px',
+            padding: '40px 30px',
+            maxWidth: '420px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+            border: '1px solid #f1f1f1',
+            boxSizing: 'border-box'
+          }}>
+            <div style={{ 
+              width: '64px', 
+              height: '64px', 
+              borderRadius: '50%', 
+              backgroundColor: '#fdf3f3', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 20px auto',
+              border: '2px solid #f5c2c2'
+            }}>
+              <span style={{ fontSize: '30px' }}>💳</span>
+            </div>
+            <h2 style={{ fontFamily: "'Times New Roman', Times, serif", color: '#8c2b53', fontSize: '22px', textTransform: 'uppercase', marginBottom: '12px', marginTop: 0 }}>
+              Falha no Pagamento
+            </h2>
+            <p style={{ fontFamily: "Arial, sans-serif", color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '30px', padding: '0 10px' }}>
+              {erro}
+            </p>
+            <button 
+              onClick={() => setShowModal(false)}
+              style={{
+                backgroundColor: '#8c2b53',
+                color: 'white',
+                border: 'none',
+                padding: '14px 40px',
+                borderRadius: '12px',
+                fontFamily: "'Times New Roman', Times, serif",
+                fontSize: '15px',
+                textTransform: 'uppercase',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+                boxShadow: '0 4px 12px rgba(140, 43, 83, 0.2)'
+              }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#721e41'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#8c2b53'}
+            >
+              Corrigir Dados
+            </button>
+          </div>
+        </div>
       )}
 
       <button
@@ -101,6 +168,7 @@ function Payment() {
   const [clientSecret, setClientSecret] = useState("")
   const [valorTotal, setValorTotal] = useState(0)
   const [erroInicio, setErroInicio] = useState("")
+  const [showModalInicio, setShowModalInicio] = useState(false)
 
   useEffect(() => {
     async function iniciarPagamento() {
@@ -109,7 +177,8 @@ function Payment() {
         setClientSecret(response.data.clientSecret)
         setValorTotal(response.data.amount)
       } catch (error) {
-        setErroInicio(error.response?.data?.error || "Erro ao iniciar pagamento.")
+        setErroInicio(error.response?.data?.error || "Erro ao iniciar o gateway de pagamento. Verifique as configurações de sua conta ou tente novamente mais tarde.")
+        setShowModalInicio(true)
       }
     }
     iniciarPagamento()
@@ -129,6 +198,79 @@ function Payment() {
   return (
     <section className="checkout-page">
       <div className="checkout-container">
+
+        {/* POPUP MODAL PREMIUM DE ERRO DE INICIALIZAÇÃO */}
+        {showModalInicio && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}>
+            <div style={{
+              backgroundColor: '#fff',
+              borderRadius: '24px',
+              padding: '40px 30px',
+              maxWidth: '420px',
+              width: '90%',
+              textAlign: 'center',
+              boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
+              border: '1px solid #f1f1f1',
+              boxSizing: 'border-box'
+            }}>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                backgroundColor: '#fdf3f3', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                margin: '0 auto 20px auto',
+                border: '2px solid #f5c2c2'
+              }}>
+                <span style={{ fontSize: '30px' }}>⚠️</span>
+              </div>
+              <h2 style={{ fontFamily: "'Times New Roman', Times, serif", color: '#8c2b53', fontSize: '22px', textTransform: 'uppercase', marginBottom: '12px', marginTop: 0 }}>
+                Erro de Inicialização
+              </h2>
+              <p style={{ fontFamily: "Arial, sans-serif", color: '#666', fontSize: '14px', lineHeight: '1.6', marginBottom: '30px', padding: '0 10px' }}>
+                {erroInicio}
+              </p>
+              <button 
+                onClick={() => {
+                  setShowModalInicio(false)
+                  window.location.reload()
+                }}
+                style={{
+                  backgroundColor: '#8c2b53',
+                  color: 'white',
+                  border: 'none',
+                  padding: '14px 40px',
+                  borderRadius: '12px',
+                  fontFamily: "'Times New Roman', Times, serif",
+                  fontSize: '15px',
+                  textTransform: 'uppercase',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s',
+                  boxShadow: '0 4px 12px rgba(140, 43, 83, 0.2)'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = '#721e41'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#8c2b53'}
+              >
+                Recarregar Página
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Barra de Progresso */}
         <div className="checkout-steps">
@@ -182,10 +324,6 @@ function Payment() {
             <p style={{ textAlign: "center", color: "#555", fontFamily: "'Cinzel', serif", marginBottom: "10px" }}>
               Total: <strong>R$ {(valorTotal / 100).toFixed(2).replace(".", ",")}</strong>
             </p>
-          )}
-
-          {erroInicio && (
-            <p style={{ color: "#c0392b", textAlign: "center", marginTop: "20px" }}>{erroInicio}</p>
           )}
 
           {clientSecret ? (

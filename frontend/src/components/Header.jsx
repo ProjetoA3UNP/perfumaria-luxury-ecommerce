@@ -15,6 +15,7 @@ function Header() {
   const [menuAberto, setMenuAberto] = useState(false)
   const [buscaMobileAberta, setBuscaMobileAberta] = useState(false)
   const [submenuAberto, setSubmenuAberto] = useState(null)
+  const [subgrupoAberto, setSubgrupoAberto] = useState(null)
 
   function gerarSlug(texto) {
     if (!texto) return ""
@@ -194,6 +195,7 @@ function Header() {
   useEffect(() => {
     setMenuAberto(false)
     setSubmenuAberto(null)
+    setSubgrupoAberto(null)
   }, [location.pathname])
 
   // Helper que retorna JSX do formulário de busca (NÃO é um componente React)
@@ -220,8 +222,12 @@ function Header() {
         <button 
           type="button" 
           onClick={() => {
-            setBusca('')
-            setMostrarSugestoes(false)
+            if (busca.trim() !== '') {
+              setBusca('')
+              setMostrarSugestoes(false)
+            } else if (extraClass === "mobile-search-form") {
+              setBuscaMobileAberta(false)
+            }
           }} 
           className="search-clear">
           ✕
@@ -427,19 +433,29 @@ function Header() {
 
               {submenuAberto === menu.titulo && (
                 <div className="hamburger-submenu">
-                  {/* Menus com subgrupos (ex: Perfumes) */}
+                  {/* Menus com subgrupos (ex: Perfumes) — cada subgrupo é um accordion */}
                   {menu.subgrupos ? menu.subgrupos.map((grupo) => (
-                    <div key={grupo.subtitulo}>
-                      <p className="hamburger-subgroup-title">{grupo.subtitulo}</p>
-                      {grupo.opcoes.map((opcao) => (
-                        <Link
-                          key={opcao.slug}
-                          to={opcao.rota ? opcao.rota : `/categoria/${opcao.slug}`}
-                          onClick={() => setMenuAberto(false)}
-                        >
-                          {opcao.nome}
-                        </Link>
-                      ))}
+                    <div key={grupo.subtitulo} className="hamburger-subgroup">
+                      <button
+                        className="hamburger-subgroup-btn"
+                        onClick={() => setSubgrupoAberto(subgrupoAberto === grupo.subtitulo ? null : grupo.subtitulo)}
+                      >
+                        <span>{grupo.subtitulo}</span>
+                        <span className={`hamburger-arrow ${subgrupoAberto === grupo.subtitulo ? 'open' : ''}`}>›</span>
+                      </button>
+                      {subgrupoAberto === grupo.subtitulo && (
+                        <div className="hamburger-subgroup-options">
+                          {grupo.opcoes.map((opcao) => (
+                            <Link
+                              key={opcao.slug}
+                              to={opcao.rota ? opcao.rota : `/categoria/${opcao.slug}`}
+                              onClick={() => setMenuAberto(false)}
+                            >
+                              {opcao.nome}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )) : (
                     /* Menus simples (ex: Corpo e Banho) */

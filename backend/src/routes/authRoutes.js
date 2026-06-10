@@ -10,6 +10,9 @@ router.post('/register', authController.register);
 // Mapeia /api/auth/login para a função login
 router.post('/login', authController.login);
 
+// Mapeia /api/auth/forgot-password para simular recuperação de senha
+router.post('/forgot-password', authController.forgotPassword);
+
 // Mapeia /api/auth/me para buscar os dados do perfil logado
 router.get('/me', authMiddleware, authController.getMe);
 

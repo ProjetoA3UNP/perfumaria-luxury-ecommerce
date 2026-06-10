@@ -1410,3 +1410,35 @@
   font-weight: bold;
   text-decoration: none;
 }
+
+/* ============================== */
+/*       AUTH PAGES (MOBILE)       */
+/* ============================== */
+@media (max-width: 768px) {
+  .auth-page {
+    justify-content: flex-start !important;
+    padding: 20px 15px !important;
+    min-height: auto !important;
+  }
+  .canvas-logo-container {
+    display: none !important;
+  }
+
+  .auth-card {
+    padding: 25px 20px !important;
+    border-radius: 16px !important;
+    margin-top: 10px !important;
+  }
+  
+  .auth-card h1 {
+    font-size: 24px !important;
+    text-align: center !important;
+  }
+
+  .auth-card p.subtitle {
+    font-size: 11px !important;
+    text-align: center !important;
+    margin-bottom: 20px !important;
+    line-height: 1.4 !important;
+  }
+}

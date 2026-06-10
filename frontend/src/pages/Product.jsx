@@ -33,6 +33,17 @@ function Product() {
 
   const isLogado = !!localStorage.getItem("usuarioLogado")
 
+  const [toastMessage, setToastMessage] = useState("")
+  const [toastType, setToastType] = useState("success")
+
+  function showToast(message, type = "success") {
+    setToastMessage(message)
+    setToastType(type)
+    setTimeout(() => {
+      setToastMessage("")
+    }, 3000)
+  }
+
   useEffect(() => {
     async function carregarProduto() {
       try {
@@ -97,14 +108,15 @@ function Product() {
   async function adicionarSacola() {
     if (!variacaoSelecionada) return
     try {
-      await api.post("/cart", { variacao_id: variacaoSelecionada.id, quantidade: 1 })
+      await api.post("/cart/add", { variacao_id: variacaoSelecionada.id, quantidade: 1 })
       atualizarBadge()
-      navigate("/sacola")
+      showToast("Adicionado à sacola!", "success")
+      setTimeout(() => navigate("/sacola"), 1000)
     } catch (error) {
       if (error.response?.status === 401) {
-        alert("Você precisa fazer login para adicionar à sacola.")
+        showToast("Você precisa fazer login para adicionar à sacola.", "error")
       } else {
-        alert(error.response?.data?.error || "Erro ao adicionar à sacola.")
+        showToast(error.response?.data?.error || "Erro ao adicionar à sacola.", "error")
       }
     }
   }
@@ -114,15 +126,15 @@ function Product() {
       const response = await api.post("/favorites/toggle", { produto_id: produto.id })
       atualizarFavoritosBadge()
       if (response.data.action === "added") {
-        alert("Adicionado aos favoritos!")
+        showToast("Adicionado aos favoritos!", "success")
       } else {
-        alert("Removido dos favoritos!")
+        showToast("Removido dos favoritos!", "success")
       }
     } catch (error) {
       if (error.response?.status === 401) {
-        alert("Você precisa fazer login para favoritar.")
+        showToast("Você precisa fazer login para favoritar.", "error")
       } else {
-        alert(error.response?.data?.error || "Erro ao favoritar.")
+        showToast(error.response?.data?.error || "Erro ao favoritar.", "error")
       }
     }
   }
@@ -162,7 +174,43 @@ function Product() {
   }
 
   return (
-    <section className="product-page" style={{ padding: '50px 20px', maxWidth: '1200px', margin: '0 auto' }}>
+    <section className="product-page" style={{ padding: '50px 20px', maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+      
+      {/* Toast de Notificação Premium */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20px',
+          left: '50%',
+          backgroundColor: toastType === 'success' ? '#f4fbf7' : toastType === 'error' ? '#fdf3f3' : '#fff',
+          border: toastType === 'success' ? '1.5px solid #c2ebd9' : toastType === 'error' ? '1.5px solid #f5c2c2' : '1.5px solid #eee',
+          color: toastType === 'success' ? '#27ae60' : toastType === 'error' ? '#d9383a' : '#333',
+          padding: '16px 24px',
+          borderRadius: '16px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          fontFamily: "'Times New Roman', Times, serif",
+          fontSize: '14px',
+          textTransform: 'uppercase',
+          fontWeight: 'bold',
+          letterSpacing: '0.5px',
+          animation: 'slideIn 0.3s ease forwards'
+        }}>
+          <span>{toastType === 'success' ? '✨' : toastType === 'error' ? '⚠️' : 'ℹ️'}</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
+      
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translate(-50%, -20px); opacity: 0; }
+          to { transform: translate(-50%, 0); opacity: 1; }
+        }
+      `}</style>
+
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '60px', justifyContent: 'center' }}>
 
         {/* Imagem do Produto */}

@@ -138,11 +138,17 @@ function Address() {
   }
 
   function handleChange(e) {
-    const { name, value } = e.target
-    setEnderecoForm(prev => ({ ...prev, [name]: value }))
+    let { name, value } = e.target
 
     if (name === "cep") {
-      const cepLimpo = value.replace(/\D/g, "")
+      // Formata como 00000-000
+      let val = value.replace(/\D/g, "")
+      if (val.length > 5) {
+        val = val.substring(0, 5) + "-" + val.substring(5, 8)
+      }
+      value = val
+
+      const cepLimpo = val.replace(/\D/g, "")
       if (cepLimpo.length === 8) {
         buscarCep(cepLimpo)
       } else {
@@ -150,6 +156,8 @@ function Address() {
         setErroCep("")
       }
     }
+
+    setEnderecoForm(prev => ({ ...prev, [name]: value }))
   }
 
   async function continuar(e) {
@@ -273,13 +281,17 @@ function Address() {
                   disabled={!isNovoEndereco}
                   placeholder="00000-000"
                   maxLength={9}
-                  style={{ borderColor: erroCep ? "#c0392b" : undefined }}
+                  style={{ 
+                    border: erroCep ? "2px solid #d9383a" : "1px solid #555",
+                    outline: 'none',
+                    transition: 'border-color 0.2s ease'
+                  }}
                 />
                 {buscandoCep && (
                   <small style={{ color: "#888", marginTop: "4px" }}>Buscando endereço...</small>
                 )}
                 {erroCep && (
-                  <small style={{ color: "#c0392b", marginTop: "4px" }}>{erroCep}</small>
+                  <small style={{ color: "#d9383a", marginTop: "4px", fontWeight: "bold" }}>⚠️ {erroCep}</small>
                 )}
               </div>
 

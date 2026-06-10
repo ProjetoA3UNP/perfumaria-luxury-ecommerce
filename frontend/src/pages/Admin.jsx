@@ -219,6 +219,7 @@ function Admin() {
       // Recarregar logs
       const resLogs = await api.get("/orders/admin/logs")
       setStatusLogs(resLogs.data)
+      alert(`Status do pedido atualizado para "${STATUS_LABELS[novoStatus] || novoStatus}"! E-mail de notificação enviado ao cliente com sucesso.`)
     } catch (err) {
       alert(err.response?.data?.error || "Erro ao atualizar status.")
     } finally {

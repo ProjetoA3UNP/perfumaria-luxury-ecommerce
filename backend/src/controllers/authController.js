@@ -96,6 +96,30 @@ const authController = {
     }
   },
 
+  // Simulação de Esqueci minha Senha (apenas valida se o e-mail existe no banco)
+  async forgotPassword(req, res) {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: "E-mail não fornecido." });
+    }
+
+    try {
+      const [users] = await db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+      
+      if (users.length === 0) {
+        return res.status(404).json({ error: "Não encontramos uma conta associada a este e-mail." });
+      }
+
+      // Em um cenário real, enviaríamos um e-mail com token/link
+      return res.status(200).json({ message: "Instruções de recuperação enviadas com sucesso!" });
+
+    } catch (error) {
+      console.error("Erro na recuperação de senha:", error);
+      return res.status(500).json({ error: "Erro interno ao processar a recuperação de senha." });
+    }
+  },
+
   // Busca dados do próprio perfil
   async getMe(req, res) {
     try {

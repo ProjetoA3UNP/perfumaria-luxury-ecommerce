@@ -16,18 +16,19 @@
 .checkout-steps {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
   margin-bottom: 50px;
   padding: 0 40px;
+  flex-wrap: nowrap;
 }
 
 .checkout-steps::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 60px;
-  right: 60px;
+  top: 35px; /* Metade do step-icon (70px) */
+  left: 75px;
+  right: 75px;
   height: 2px;
   background-color: #000;
   z-index: 1;
@@ -40,8 +41,10 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background-color: #fff;
-  padding: 0 10px;
+  background-color: transparent;
+  padding: 0 5px;
+  flex: 1;
+  text-align: center;
 }
 
 .step-icon {
@@ -235,30 +238,72 @@
 
 /* Small adjustments for responsiveness */
 @media (max-width: 768px) {
+  .checkout-page {
+    padding: 30px 15px;
+  }
+
   .checkout-steps {
-    padding: 0 10px;
+    padding: 0;
+    gap: 5px;
+    margin-bottom: 30px;
   }
   
+  .checkout-steps::before {
+    top: 25px; /* Metade de 50px */
+    left: 25px;
+    right: 25px;
+  }
+
   .step-icon {
     width: 50px;
     height: 50px;
   }
   
   .step-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
   
   .step span {
+    font-size: 9px;
+  }
+
+  .step.active span {
     font-size: 10px;
   }
   
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
+  .address-box {
+    padding: 25px 20px;
+  }
+}
+
+@media (max-width: 480px) {
   .checkout-steps::before {
-    left: 30px;
-    right: 30px;
+    top: 20px; /* Metade de 40px */
+    left: 20px;
+    right: 20px;
+  }
+
+  .step-icon {
+    width: 40px;
+    height: 40px;
+    border-width: 1.5px;
+  }
+  
+  .step-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .step span {
+    font-size: 8px;
+  }
+
+  .step.active span {
+    font-size: 9px;
   }
 }

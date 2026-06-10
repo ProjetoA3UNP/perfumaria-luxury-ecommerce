@@ -17,4 +17,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Interceptador de Resposta: Trata expiração do token (401) de forma global
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Ignora erro 401 se for a própria tentativa de login com credenciais incorretas
+      const isLoginRequest = error.config && error.config.url && error.config.url.endsWith("/auth/login");
+      
+      if (!isLoginRequest) {
+        const usuarioTexto = localStorage.getItem("usuarioLogado");
+        if (usuarioTexto) {
+          localStorage.removeItem("usuarioLogado");
+          // Redireciona limpando o estado atual
+          window.location.href = "/login?session_expired=true";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
