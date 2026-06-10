@@ -64,7 +64,7 @@ function ProductCard({
       atualizarFavoritosBadge()
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        mostrarMensagem("Faça login")
+        mostrarMensagem("Faça login para favoritar")
       } else {
         mostrarMensagem("Erro ao favoritar")
       }
