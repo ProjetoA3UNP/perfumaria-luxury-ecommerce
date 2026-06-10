@@ -170,6 +170,45 @@ function Payment() {
   const [erroInicio, setErroInicio] = useState("")
   const [showModalInicio, setShowModalInicio] = useState(false)
 
+  // --- Estados do PIX Simulado ---
+  const [metodoPagamento, setMetodoPagamento] = useState("cartao")
+  const [loadingPix, setLoadingPix] = useState(false)
+  const navigate = useNavigate()
+
+  async function handlePixSubmit() {
+    setLoadingPix(true)
+    
+    // Busca itens para o resumo da próxima tela
+    let itensCarrinho = []
+    try {
+      const cartRes = await api.get("/cart")
+      itensCarrinho = cartRes.data.itens || []
+    } catch (_) {}
+
+    try {
+      const response = await api.post("/orders/checkout", {
+        endereco_id: endereco?.id || null,
+        forma_pagamento: "PIX",
+        stripe_payment_id: "pix_simulado_faculdade",
+        cupom_codigo: cupom_codigo || null
+      })
+      atualizarBadge()
+      navigate("/pedido-concluido", {
+        state: {
+          numero_pedido: response.data.numero_pedido,
+          valor_total: response.data.valor_total,
+          forma_pagamento: "PIX",
+          endereco,
+          itens: itensCarrinho
+        }
+      })
+    } catch (err) {
+      setErroInicio(err.response?.data?.error || "Erro ao processar pagamento via PIX.")
+      setShowModalInicio(true)
+      setLoadingPix(false)
+    }
+  }
+
   useEffect(() => {
     async function iniciarPagamento() {
       try {
@@ -321,20 +360,99 @@ function Payment() {
           <h2>Pagamento</h2>
 
           {valorTotal > 0 && (
-            <p style={{ textAlign: "center", color: "#555", fontFamily: "'Cinzel', serif", marginBottom: "10px" }}>
+            <p style={{ textAlign: "center", color: "#555", fontFamily: "'Cinzel', serif", marginBottom: "20px" }}>
               Total: <strong>R$ {(valorTotal / 100).toFixed(2).replace(".", ",")}</strong>
             </p>
           )}
 
-          {clientSecret ? (
-            <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
-              <CheckoutForm endereco={endereco} atualizarBadge={atualizarBadge} cupom_codigo={cupom_codigo} />
-            </Elements>
-          ) : !erroInicio ? (
-            <p style={{ textAlign: "center", color: "#888", marginTop: "30px" }}>
-              Preparando formulário de pagamento...
-            </p>
-          ) : null}
+          {/* Toggle de Método de Pagamento */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginBottom: '30px' }}>
+            <button 
+              type="button"
+              onClick={() => setMetodoPagamento("cartao")}
+              style={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '8px',
+                border: metodoPagamento === "cartao" ? '2px solid #96305a' : '1px solid #ccc',
+                backgroundColor: metodoPagamento === "cartao" ? '#fdf3f3' : '#fff',
+                color: metodoPagamento === "cartao" ? '#96305a' : '#555',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: "'Times New Roman', Times, serif"
+              }}
+            >
+              💳 Cartão de Crédito
+            </button>
+            <button 
+              type="button"
+              onClick={() => setMetodoPagamento("pix")}
+              style={{
+                flex: 1,
+                padding: '12px',
+                borderRadius: '8px',
+                border: metodoPagamento === "pix" ? '2px solid #27ae60' : '1px solid #ccc',
+                backgroundColor: metodoPagamento === "pix" ? '#eafaf1' : '#fff',
+                color: metodoPagamento === "pix" ? '#27ae60' : '#555',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontFamily: "'Times New Roman', Times, serif"
+              }}
+            >
+              💠 PIX
+            </button>
+          </div>
+
+          {metodoPagamento === "cartao" ? (
+            clientSecret ? (
+              <Elements stripe={stripePromise} options={{ clientSecret, appearance }}>
+                <CheckoutForm endereco={endereco} atualizarBadge={atualizarBadge} cupom_codigo={cupom_codigo} />
+              </Elements>
+            ) : !erroInicio ? (
+              <p style={{ textAlign: "center", color: "#888", marginTop: "30px" }}>
+                Preparando formulário de pagamento...
+              </p>
+            ) : null
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px', border: '1px solid #ddd', borderRadius: '12px' }}>
+              <h3 style={{ color: '#27ae60', fontFamily: "'Times New Roman', Times, serif", marginBottom: '15px' }}>Pagamento via PIX</h3>
+              <p style={{ fontSize: '14px', color: '#666', marginBottom: '20px' }}>
+                Escaneie o QR Code abaixo com o aplicativo do seu banco para pagar. (Simulação)
+              </p>
+              
+              <div style={{ width: '150px', height: '150px', backgroundColor: '#f5f5f5', border: '2px dashed #ccc', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', marginBottom: '20px' }}>
+                <span style={{ color: '#aaa', fontSize: '12px' }}>[ QR CODE FALSO ]</span>
+              </div>
+
+              <div style={{ marginBottom: '30px' }}>
+                <p style={{ fontSize: '12px', color: '#888', marginBottom: '5px' }}>Ou use o recurso Copia e Cola:</p>
+                <div style={{ padding: '10px', backgroundColor: '#f9f9f9', border: '1px solid #eee', borderRadius: '4px', fontSize: '11px', wordBreak: 'break-all', color: '#444' }}>
+                  00020101021126580014br.gov.bcb.pix0136SIMULACAO-FACULDADE-1234567890
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handlePixSubmit}
+                disabled={loadingPix}
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  backgroundColor: '#27ae60',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '25px',
+                  fontFamily: "'Cinzel', serif",
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: loadingPix ? 'not-allowed' : 'pointer',
+                  opacity: loadingPix ? 0.7 : 1
+                }}
+              >
+                {loadingPix ? "Processando..." : "SIMULAR PAGAMENTO PIX"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </section>

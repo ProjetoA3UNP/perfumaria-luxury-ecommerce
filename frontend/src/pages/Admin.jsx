@@ -123,6 +123,46 @@ function Admin() {
     fetchProdutos()
   }, [autorizado, abaAtiva])
 
+  // === Exportação de Relatórios ===
+  function exportarCSV() {
+    if (!metrics) return;
+    
+    let csv = "RELATORIO DE FATURAMENTO E VENDAS - ESSENCE\n\n";
+    
+    csv += "--- INDICADORES GERAIS ---\n";
+    csv += `Faturamento Total,R$ ${(metrics.kpis.faturamento / 100).toFixed(2)}\n`;
+    csv += `Total de Pedidos,${metrics.kpis.totalPedidos}\n`;
+    csv += `Ticket Medio,R$ ${(metrics.kpis.ticketMedio / 100).toFixed(2)}\n`;
+    csv += `Total de Clientes,${metrics.kpis.totalClientes}\n\n`;
+
+    csv += "--- TOP 10 PERFUMES MAIS VENDIDOS ---\n";
+    csv += "Posicao,Perfume,Marca,Unidades Vendidas,Receita Bruta\n";
+    metrics.topVendidos.forEach((p, i) => {
+      csv += `${i+1},"${p.nome}","${p.marca}",${p.total_vendido},R$ ${(p.receita / 100).toFixed(2)}\n`;
+    });
+
+    csv += "\n--- ULTIMOS PEDIDOS ---\n";
+    csv += "Pedido,Cliente,Valor,Status,Data\n";
+    metrics.pedidosRecentes.forEach(p => {
+      const dataStr = new Date(p.data).toLocaleDateString("pt-BR");
+      csv += `${p.numero_pedido},"${p.cliente}",R$ ${(p.valor_total / 100).toFixed(2)},${p.status},${dataStr}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "relatorio_faturamento_essence.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function exportarPDF() {
+    window.print();
+  }
+
   // Funções da aba Produtos
   function handleProdutoEdit(produtoId, campo, valor) {
     setProdutosEditados(prev => ({
@@ -365,6 +405,22 @@ function Admin() {
               </div>
             ) : metrics ? (
               <>
+                {/* Botões de Exportação */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '20px' }} className="no-print">
+                  <button 
+                    onClick={exportarCSV}
+                    style={{ padding: '10px 15px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    📥 Exportar CSV
+                  </button>
+                  <button 
+                    onClick={exportarPDF}
+                    style={{ padding: '10px 15px', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    🖨️ Exportar PDF
+                  </button>
+                </div>
+
                 {/* KPIs */}
                 <div className="dash-kpis">
                   <div className="dash-kpi-card">
