@@ -1442,3 +1442,177 @@
     line-height: 1.4 !important;
   }
 }
+
+/* ============================== */
+/*       ADMIN PAGE (MOBILE CARDS) */
+/* ============================== */
+.admin-mobile-only {
+  display: none !important;
+}
+
+.admin-desktop-only {
+  display: table !important;
+}
+div.admin-desktop-only, 
+div.dash-table-wrap.admin-desktop-only {
+  display: block !important;
+}
+
+@media (max-width: 768px) {
+  .admin-desktop-only {
+    display: none !important;
+  }
+  
+  .admin-mobile-only {
+    display: block !important;
+  }
+  
+  /* Cards container */
+  .dash-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 10px;
+  }
+  
+  /* Card individual */
+  .dash-mobile-card {
+    background: #fff;
+    border: 1px solid #f0e4e8;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 6px rgba(150, 48, 90, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.2s;
+  }
+  
+  .dash-mobile-card:hover {
+    transform: translateY(-2px);
+  }
+  
+  /* Card Header */
+  .dash-mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f9f0f3;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .dash-mobile-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #222;
+  }
+  
+  .dash-mobile-card-subtitle {
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+  
+  /* Posição rank badge */
+  .dash-mobile-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #8c8c8c;
+  }
+  
+  .dash-mobile-rank-badge.rank-1 {
+    background: linear-gradient(135deg, #ffd700, #ffa500);
+    box-shadow: 0 2px 5px rgba(255, 215, 0, 0.3);
+  }
+  
+  .dash-mobile-rank-badge.rank-2 {
+    background: linear-gradient(135deg, #c0c0c0, #a9a9a9);
+    box-shadow: 0 2px 5px rgba(192, 192, 192, 0.3);
+  }
+  
+  .dash-mobile-rank-badge.rank-3 {
+    background: linear-gradient(135deg, #cd7f32, #b87333);
+    box-shadow: 0 2px 5px rgba(205, 127, 50, 0.3);
+  }
+  
+  /* Row de dados no card */
+  .dash-mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  
+  .dash-mobile-card-label {
+    color: #777;
+    font-weight: 500;
+  }
+  
+  .dash-mobile-card-value {
+    color: #333;
+    font-weight: 600;
+  }
+  
+  /* Sub-lista para variações */
+  .dash-mobile-variations-list {
+    background-color: #faf6f8;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .dash-mobile-variation-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #e0d0d8;
+  }
+  
+  .dash-mobile-variation-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  
+  .dash-mobile-inputs {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .dash-mobile-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+  }
+  
+  .dash-mobile-input-group label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: bold;
+  }
+  
+  .dash-mobile-input-group input {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    border: 1px solid #ccc !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+}
+

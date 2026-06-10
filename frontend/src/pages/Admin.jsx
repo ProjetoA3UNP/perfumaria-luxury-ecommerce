@@ -508,19 +508,47 @@ function Admin() {
                   <div className="dash-table-card">
                     <h3>🏆 Top 10 Perfumes Mais Vendidos</h3>
                     {metrics.topVendidos.length > 0 ? (
-                      <table className="dash-table">
-                        <thead>
-                          <tr><th>#</th><th>Perfume</th><th>Marca</th><th>Vendidos</th><th>Receita</th></tr>
-                        </thead>
-                        <tbody>
+                      <>
+                        <table className="dash-table admin-desktop-only">
+                          <thead>
+                            <tr><th>#</th><th>Perfume</th><th>Marca</th><th>Vendidos</th><th>Receita</th></tr>
+                          </thead>
+                          <tbody>
+                            {metrics.topVendidos.map((p, i) => (
+                              <tr key={i}>
+                                <td>{i + 1}</td><td>{p.nome}</td><td>{p.marca}</td>
+                                <td>{p.total_vendido}</td><td>{formatarReal(p.receita)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        <div className="dash-mobile-list admin-mobile-only">
                           {metrics.topVendidos.map((p, i) => (
-                            <tr key={i}>
-                              <td>{i + 1}</td><td>{p.nome}</td><td>{p.marca}</td>
-                              <td>{p.total_vendido}</td><td>{formatarReal(p.receita)}</td>
-                            </tr>
+                            <div key={i} className="dash-mobile-card">
+                              <div className="dash-mobile-card-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span className={`dash-mobile-rank-badge rank-${i + 1}`}>
+                                    {i + 1}
+                                  </span>
+                                  <div>
+                                    <div className="dash-mobile-card-title">{p.nome}</div>
+                                    <div className="dash-mobile-card-subtitle">{p.marca}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Vendidos</span>
+                                <span className="dash-mobile-card-value">{p.total_vendido}</span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Receita</span>
+                                <span className="dash-mobile-card-value">{formatarReal(p.receita)}</span>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      </>
                     ) : <p className="dash-empty">Nenhuma venda registrada.</p>}
                   </div>
 
@@ -528,18 +556,42 @@ function Admin() {
                   <div className="dash-table-card">
                     <h3>❤️ Top 10 Perfumes Mais Favoritados</h3>
                     {metrics.topFavoritados.length > 0 ? (
-                      <table className="dash-table">
-                        <thead>
-                          <tr><th>#</th><th>Perfume</th><th>Marca</th><th>Favoritos</th></tr>
-                        </thead>
-                        <tbody>
+                      <>
+                        <table className="dash-table admin-desktop-only">
+                          <thead>
+                            <tr><th>#</th><th>Perfume</th><th>Marca</th><th>Favoritos</th></tr>
+                          </thead>
+                          <tbody>
+                            {metrics.topFavoritados.map((p, i) => (
+                              <tr key={i}>
+                                <td>{i + 1}</td><td>{p.nome}</td><td>{p.marca}</td><td>{p.total_favoritos}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        <div className="dash-mobile-list admin-mobile-only">
                           {metrics.topFavoritados.map((p, i) => (
-                            <tr key={i}>
-                              <td>{i + 1}</td><td>{p.nome}</td><td>{p.marca}</td><td>{p.total_favoritos}</td>
-                            </tr>
+                            <div key={i} className="dash-mobile-card">
+                              <div className="dash-mobile-card-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <span className={`dash-mobile-rank-badge rank-${i + 1}`}>
+                                    {i + 1}
+                                  </span>
+                                  <div>
+                                    <div className="dash-mobile-card-title">{p.nome}</div>
+                                    <div className="dash-mobile-card-subtitle">{p.marca}</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Favoritos</span>
+                                <span className="dash-mobile-card-value">{p.total_favoritos} ❤️</span>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      </>
                     ) : <p className="dash-empty">Nenhum favorito registrado.</p>}
                   </div>
 
@@ -547,27 +599,58 @@ function Admin() {
                   <div className="dash-table-card dash-table-full">
                     <h3>🕐 Pedidos Recentes</h3>
                     {metrics.pedidosRecentes.length > 0 ? (
-                      <table className="dash-table">
-                        <thead>
-                          <tr><th>Pedido</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Status</th><th>Data</th></tr>
-                        </thead>
-                        <tbody>
+                      <>
+                        <table className="dash-table admin-desktop-only">
+                          <thead>
+                            <tr><th>Pedido</th><th>Cliente</th><th>Valor</th><th>Pagamento</th><th>Status</th><th>Data</th></tr>
+                          </thead>
+                          <tbody>
+                            {metrics.pedidosRecentes.map((p, i) => (
+                              <tr key={i}>
+                                <td><strong>{p.numero_pedido}</strong></td>
+                                <td>{p.cliente}</td>
+                                <td>{formatarReal(p.valor_total)}</td>
+                                <td>{p.forma_pagamento === "CARTAO_CREDITO" ? "Cartão" : "PIX"}</td>
+                                <td>
+                                  <span className="dash-status-badge" style={{ backgroundColor: STATUS_COLORS[p.status] || "#999" }}>
+                                    {STATUS_LABELS[p.status] || p.status}
+                                  </span>
+                                </td>
+                                <td>{formatarData(p.data)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        <div className="dash-mobile-list admin-mobile-only">
                           {metrics.pedidosRecentes.map((p, i) => (
-                            <tr key={i}>
-                              <td><strong>{p.numero_pedido}</strong></td>
-                              <td>{p.cliente}</td>
-                              <td>{formatarReal(p.valor_total)}</td>
-                              <td>{p.forma_pagamento === "CARTAO_CREDITO" ? "Cartão" : "PIX"}</td>
-                              <td>
+                            <div key={i} className="dash-mobile-card">
+                              <div className="dash-mobile-card-header">
+                                <span className="dash-mobile-card-title">Pedido: #{p.numero_pedido}</span>
                                 <span className="dash-status-badge" style={{ backgroundColor: STATUS_COLORS[p.status] || "#999" }}>
                                   {STATUS_LABELS[p.status] || p.status}
                                 </span>
-                              </td>
-                              <td>{formatarData(p.data)}</td>
-                            </tr>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Cliente</span>
+                                <span className="dash-mobile-card-value">{p.cliente}</span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Valor</span>
+                                <span className="dash-mobile-card-value">{formatarReal(p.valor_total)}</span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Pagamento</span>
+                                <span className="dash-mobile-card-value">{p.forma_pagamento === "CARTAO_CREDITO" ? "Cartão" : "PIX"}</span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Data</span>
+                                <span className="dash-mobile-card-value" style={{ fontSize: '12px' }}>{formatarData(p.data)}</span>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      </>
                     ) : <p className="dash-empty">Nenhum pedido encontrado.</p>}
                   </div>
 
@@ -575,20 +658,46 @@ function Admin() {
                   <div className="dash-table-card dash-table-full">
                     <h3>⚠️ Produtos com Estoque Baixo (≤ 5 unidades)</h3>
                     {metrics.estoqueBaixo.length > 0 ? (
-                      <table className="dash-table">
-                        <thead>
-                          <tr><th>Perfume</th><th>Marca</th><th>Volume</th><th>Preço</th><th>Estoque</th></tr>
-                        </thead>
-                        <tbody>
+                      <>
+                        <table className="dash-table admin-desktop-only">
+                          <thead>
+                            <tr><th>Perfume</th><th>Marca</th><th>Volume</th><th>Preço</th><th>Estoque</th></tr>
+                          </thead>
+                          <tbody>
+                            {metrics.estoqueBaixo.map((p, i) => (
+                              <tr key={i} className={p.estoque_qtd === 0 ? "dash-row-danger" : "dash-row-warn"}>
+                                <td>{p.nome}</td><td>{p.marca}</td><td>{p.volume_ml}ml</td>
+                                <td>{formatarReal(p.preco)}</td>
+                                <td><strong>{p.estoque_qtd}</strong></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        <div className="dash-mobile-list admin-mobile-only">
                           {metrics.estoqueBaixo.map((p, i) => (
-                            <tr key={i} className={p.estoque_qtd === 0 ? "dash-row-danger" : "dash-row-warn"}>
-                              <td>{p.nome}</td><td>{p.marca}</td><td>{p.volume_ml}ml</td>
-                              <td>{formatarReal(p.preco)}</td>
-                              <td><strong>{p.estoque_qtd}</strong></td>
-                            </tr>
+                            <div key={i} className={`dash-mobile-card ${p.estoque_qtd === 0 ? "dash-row-danger" : "dash-row-warn"}`} style={{ borderLeft: `5px solid ${p.estoque_qtd === 0 ? "#ef4444" : "#f59e0b"}` }}>
+                              <div className="dash-mobile-card-header">
+                                <div>
+                                  <div className="dash-mobile-card-title">{p.nome}</div>
+                                  <div className="dash-mobile-card-subtitle">{p.marca}</div>
+                                </div>
+                                <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '4px', backgroundColor: p.estoque_qtd === 0 ? '#fee2e2' : '#fef3c7', color: p.estoque_qtd === 0 ? '#ef4444' : '#b45309' }}>
+                                  {p.estoque_qtd} un
+                                </span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Volume</span>
+                                <span className="dash-mobile-card-value">{p.volume_ml}ml</span>
+                              </div>
+                              <div className="dash-mobile-card-row">
+                                <span className="dash-mobile-card-label">Preço</span>
+                                <span className="dash-mobile-card-value">{formatarReal(p.preco)}</span>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      </>
                     ) : <p className="dash-empty" style={{ color: "#059669" }}>✅ Todo estoque acima de 5 unidades!</p>}
                   </div>
                 </div>
@@ -597,7 +706,7 @@ function Admin() {
                 {metrics.ultimosLogs && metrics.ultimosLogs.length > 0 && (
                   <div className="dash-card" style={{ gridColumn: '1 / -1' }}>
                     <h3 className="dash-card-title">📜 Últimas Alterações de Status</h3>
-                    <table className="dash-table">
+                    <table className="dash-table admin-desktop-only">
                       <thead>
                         <tr>
                           <th>Pedido</th>
@@ -629,8 +738,36 @@ function Admin() {
                         ))}
                       </tbody>
                     </table>
+
+                    <div className="dash-mobile-list admin-mobile-only">
+                      {metrics.ultimosLogs.map((log, i) => (
+                        <div key={i} className="dash-mobile-card">
+                          <div className="dash-mobile-card-header">
+                            <span className="dash-mobile-card-title">Pedido: #{log.numero_pedido}</span>
+                            <span style={{ fontSize: '11px', color: '#666' }}>{formatarData(log.data_alteracao)}</span>
+                          </div>
+                          <div className="dash-mobile-card-row">
+                            <span className="dash-mobile-card-label">Alteração</span>
+                            <span className="dash-mobile-card-value">
+                              <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_anterior] || '#999') + '22', color: STATUS_COLORS[log.status_anterior] || '#999' }}>
+                                {STATUS_LABELS[log.status_anterior] || log.status_anterior}
+                              </span>
+                              <span style={{ margin: '0 6px', color: '#999' }}>→</span>
+                              <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_novo] || '#999') + '22', color: STATUS_COLORS[log.status_novo] || '#999' }}>
+                                {STATUS_LABELS[log.status_novo] || log.status_novo}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="dash-mobile-card-row">
+                            <span className="dash-mobile-card-label">Responsável</span>
+                            <span className="dash-mobile-card-value">{log.admin_nome}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
+
               </>
             ) : (
               <p className="dash-empty">Erro ao carregar métricas.</p>
@@ -648,7 +785,8 @@ function Admin() {
               <p className="dash-empty">Nenhum produto encontrado.</p>
             ) : (
               <div className="dash-table-wrap">
-                <table className="dash-table">
+                {/* Versão Desktop */}
+                <table className="dash-table admin-desktop-only">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -752,6 +890,94 @@ function Admin() {
                     })}
                   </tbody>
                 </table>
+
+                {/* Versão Mobile */}
+                <div className="dash-mobile-list admin-mobile-only">
+                  {produtosList.map(p => {
+                    const edits = produtosEditados[p.id] || {}
+                    const variacoes = p.variacoes || []
+                    const temEdicao = !!produtosEditados[p.id]
+
+                    return (
+                      <div key={p.id} className="dash-mobile-card" style={{ opacity: p.ativo === false || p.ativo === 0 ? 0.7 : 1 }}>
+                        <div className="dash-mobile-card-header">
+                          <span className="dash-mobile-card-title">ID: #{p.id}</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              onClick={() => toggleAtivo(p)}
+                              disabled={salvandoProduto === p.id}
+                              style={{
+                                padding: '4px 10px', border: 'none', borderRadius: '12px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold',
+                                backgroundColor: p.ativo ? '#d1fae5' : '#fee2e2',
+                                color: p.ativo ? '#059669' : '#dc2626'
+                              }}
+                            >
+                              {p.ativo ? 'Ativo' : 'Inativo'}
+                            </button>
+                            <button
+                              onClick={() => salvarProduto(p.id)}
+                              disabled={!temEdicao || salvandoProduto === p.id}
+                              style={{
+                                padding: '5px 12px', border: 'none', borderRadius: '6px', cursor: temEdicao ? 'pointer' : 'not-allowed',
+                                backgroundColor: temEdicao ? '#96305a' : '#e0e0e0',
+                                color: temEdicao ? '#fff' : '#999', fontSize: '12px', fontWeight: 'bold'
+                              }}
+                            >
+                              {salvandoProduto === p.id ? '...' : 'Salvar'}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="dash-mobile-card-title" style={{ fontSize: '15px' }}>{p.nome}</div>
+                          <div className="dash-mobile-card-subtitle">{p.marca}</div>
+                        </div>
+
+                        {variacoes.length > 0 ? (
+                          <div className="dash-mobile-variations-list">
+                            {variacoes.map((v) => (
+                              <div key={v.id} className="dash-mobile-variation-item">
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#96305a' }}>
+                                  Volume: {v.volume_ml}ml
+                                </div>
+                                <div className="dash-mobile-inputs">
+                                  <div className="dash-mobile-input-group">
+                                    <label>Preço (R$)</label>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      defaultValue={Number(v.preco).toFixed(2)}
+                                      onChange={(e) => handleVariacaoEdit(p.id, v.id, 'preco', Number(e.target.value))}
+                                    />
+                                  </div>
+                                  <div className="dash-mobile-input-group">
+                                    <label>Estoque</label>
+                                    <input
+                                      type="number"
+                                      defaultValue={v.estoque_qtd}
+                                      onChange={(e) => handleVariacaoEdit(p.id, v.id, 'estoque_qtd', Number(e.target.value))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '5px' }}>
+                            <div className="dash-mobile-card-row">
+                              <span className="dash-mobile-card-label">Preço</span>
+                              <span className="dash-mobile-card-value">{formatarReal(p.preco)}</span>
+                            </div>
+                            <div className="dash-mobile-card-row">
+                              <span className="dash-mobile-card-label">Estoque</span>
+                              <span className="dash-mobile-card-value">{p.estoque_qtd}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
@@ -767,7 +993,8 @@ function Admin() {
               <p className="dash-empty">Nenhum pedido encontrado.</p>
             ) : (
               <div className="dash-table-wrap">
-                <table className="dash-table">
+                {/* Versão Desktop */}
+                <table className="dash-table admin-desktop-only">
                   <thead>
                     <tr>
                       <th>Pedido</th>
@@ -828,6 +1055,76 @@ function Admin() {
                     ))}
                   </tbody>
                 </table>
+
+                {/* Versão Mobile */}
+                <div className="dash-mobile-list admin-mobile-only">
+                  {pedidosList.map(pedido => (
+                    <div key={pedido.id} className="dash-mobile-card">
+                      <div className="dash-mobile-card-header">
+                        <span className="dash-mobile-card-title">Pedido: #{pedido.numero_pedido}</span>
+                        <span style={{
+                          display: 'inline-block', padding: '4px 10px', borderRadius: '12px',
+                          fontSize: '11px', fontWeight: 'bold',
+                          backgroundColor: STATUS_COLORS[pedido.status] + '22',
+                          color: STATUS_COLORS[pedido.status],
+                          border: `1px solid ${STATUS_COLORS[pedido.status]}`
+                        }}>
+                          {STATUS_LABELS[pedido.status] || pedido.status}
+                        </span>
+                      </div>
+
+                      <div className="dash-mobile-card-row">
+                        <span className="dash-mobile-card-label">Cliente</span>
+                        <span className="dash-mobile-card-value" style={{ textAlign: 'right' }}>
+                          <strong>{pedido.cliente_nome}</strong> <br />
+                          <small style={{ color: '#888', fontWeight: 'normal' }}>{pedido.cliente_email}</small>
+                        </span>
+                      </div>
+
+                      <div className="dash-mobile-card-row">
+                        <span className="dash-mobile-card-label">Valor Total</span>
+                        <span className="dash-mobile-card-value">{formatarReal(pedido.valor_total)}</span>
+                      </div>
+
+                      <div className="dash-mobile-card-row">
+                        <span className="dash-mobile-card-label">Pagamento</span>
+                        <span className="dash-mobile-card-value">{pedido.forma_pagamento === 'CARTAO_CREDITO' ? 'Cartão' : 'PIX'}</span>
+                      </div>
+
+                      <div className="dash-mobile-card-row">
+                        <span className="dash-mobile-card-label">Data</span>
+                        <span className="dash-mobile-card-value">{formatarData(pedido.data)}</span>
+                      </div>
+
+                      <div style={{ borderTop: '1px solid #f9f0f3', paddingTop: '10px', marginTop: '5px' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#96305a', marginBottom: '6px' }}>
+                          ALTERAR STATUS:
+                        </div>
+                        {pedido.status === 'ENTREGUE' || pedido.status === 'CANCELADO' ? (
+                          <span style={{ fontSize: '12px', color: '#999', fontWeight: 'bold' }}>Finalizado</span>
+                        ) : (
+                          <select
+                            value={pedido.status}
+                            disabled={salvandoStatus === pedido.id}
+                            onChange={(e) => atualizarStatusPedido(pedido.id, e.target.value)}
+                            style={{
+                              padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd',
+                              fontSize: '13px', cursor: 'pointer', width: '100%',
+                              backgroundColor: salvandoStatus === pedido.id ? '#f0f0f0' : '#fff'
+                            }}
+                          >
+                            <option value="AGUARDANDO_PAGAMENTO">Aguardando</option>
+                            <option value="PAGO">Pago</option>
+                            <option value="PROCESSANDO">Processando</option>
+                            <option value="ENVIADO">Enviado</option>
+                            <option value="ENTREGUE">Entregue</option>
+                            <option value="CANCELADO">Cancelado</option>
+                          </select>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -835,8 +1132,8 @@ function Admin() {
             {statusLogs.length > 0 && (
               <div style={{ marginTop: '30px' }}>
                 <h3 className="dash-section-title" style={{ fontSize: '16px' }}>📜 Histórico de Alterações</h3>
-                <div className="dash-table-wrap" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  <table className="dash-table">
+                <div className="dash-table-wrap" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                  <table className="dash-table admin-desktop-only">
                     <thead>
                       <tr>
                         <th>Pedido</th>
@@ -868,6 +1165,33 @@ function Admin() {
                       ))}
                     </tbody>
                   </table>
+
+                  <div className="dash-mobile-list admin-mobile-only">
+                    {statusLogs.map(log => (
+                      <div key={log.id} className="dash-mobile-card">
+                        <div className="dash-mobile-card-header">
+                          <span className="dash-mobile-card-title">Pedido: #{log.numero_pedido}</span>
+                          <span style={{ fontSize: '11px', color: '#666' }}>{formatarData(log.data_alteracao)}</span>
+                        </div>
+                        <div className="dash-mobile-card-row">
+                          <span className="dash-mobile-card-label">Alteração</span>
+                          <span className="dash-mobile-card-value">
+                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_anterior] || '#999') + '22', color: STATUS_COLORS[log.status_anterior] || '#999' }}>
+                              {STATUS_LABELS[log.status_anterior] || log.status_anterior}
+                            </span>
+                            <span style={{ margin: '0 6px', color: '#999' }}>→</span>
+                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', backgroundColor: (STATUS_COLORS[log.status_novo] || '#999') + '22', color: STATUS_COLORS[log.status_novo] || '#999' }}>
+                              {STATUS_LABELS[log.status_novo] || log.status_novo}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="dash-mobile-card-row">
+                          <span className="dash-mobile-card-label">Responsável</span>
+                          <span className="dash-mobile-card-value">{log.admin_nome}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
