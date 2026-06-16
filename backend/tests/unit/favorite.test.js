@@ -81,6 +81,13 @@ describe('favoriteController.removeFavorite', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ message: "Removido dos favoritos." });
   });
+
+  test('Deve retornar 500 se houver erro no banco de dados', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+    await favoriteController.removeFavorite(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao remover favorito.' });
+  });
 });
 
 describe('favoriteController.getFavorites', () => {
@@ -98,12 +105,19 @@ describe('favoriteController.getFavorites', () => {
   });
 
   test('Deve listar os favoritos com sucesso (200)', async () => {
-    const listaMock = [{ id: 10, nome: 'Perfume Top', preco: 100, volume_ml: 50 }];
+    const listaMock = [{ id: 1, nome: 'Perfume' }];
     db.query.mockResolvedValueOnce([listaMock]);
 
     await favoriteController.getFavorites(req, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith(listaMock);
+    expect(res.json).toHaveBeenCalledWith([{ id: 1, nome: 'Perfume' }]);
+  });
+
+  test('Deve retornar 500 se houver erro no banco de dados', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+    await favoriteController.getFavorites(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao buscar lista de favoritos.' });
   });
 });

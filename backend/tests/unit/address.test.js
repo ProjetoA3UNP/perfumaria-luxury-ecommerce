@@ -26,6 +26,12 @@ describe('addressController.getAddresses', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(mockEnderecos);
   });
+
+  test('Deve retornar 500 se houver erro no banco', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+    await addressController.getAddresses(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
 });
 
 describe('addressController.addAddress', () => {
@@ -72,6 +78,12 @@ describe('addressController.addAddress', () => {
     expect(db.query).toHaveBeenCalledWith("UPDATE enderecos SET principal = FALSE WHERE usuario_id = ?", [1]);
     expect(res.status).toHaveBeenCalledWith(201);
   });
+
+  test('Deve retornar 500 se houver erro no banco ao adicionar', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    await addressController.addAddress(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
 });
 
 describe('addressController.updateAddress', () => {
@@ -114,6 +126,12 @@ describe('addressController.updateAddress', () => {
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ message: 'Endereço atualizado!' }));
   });
+
+  test('Deve retornar 500 se houver erro no banco ao atualizar', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    await addressController.updateAddress(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
 });
 
 describe('addressController.deleteAddress', () => {
@@ -150,5 +168,11 @@ describe('addressController.deleteAddress', () => {
     expect(db.query).toHaveBeenCalledWith("DELETE FROM enderecos WHERE id = ?", [10]);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ message: "Endereço removido com sucesso." });
+  });
+
+  test('Deve retornar 500 se houver erro no banco ao deletar', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    await addressController.deleteAddress(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });

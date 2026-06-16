@@ -111,6 +111,8 @@ const productController = {
           (SELECT SUM(estoque_qtd) FROM produto_variacoes WHERE produto_id = p.id) AS estoque_qtd, 
           (SELECT id FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS variacao_id, 
           (SELECT volume_ml FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS volume_ml, 
+          (SELECT estoque_qtd FROM produto_variacoes WHERE produto_id = p.id ORDER BY preco ASC LIMIT 1) AS variacao_estoque,
+          (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'volume_ml', volume_ml, 'preco', preco, 'estoque_qtd', estoque_qtd)) FROM (SELECT * FROM produto_variacoes WHERE produto_id = p.id AND ativo = TRUE ORDER BY preco ASC) as sub) AS variacoes,
           p.descricao,
           p.ocasiao_ideal,
           m.nome AS marca, 

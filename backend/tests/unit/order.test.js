@@ -139,6 +139,41 @@ describe('orderController.getOrderLogs', () => {
   });
 });
 
+describe('orderController.updateOrderStatus', () => {
+  let req, res;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    req = { params: { id: 10 }, body: { status: 'ENVIADO' }, user: { id: 1, tipo_perfil: 'ADMIN' } };
+    res = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
+  });
+
+  test('Deve retornar 400 se o status for inválido', async () => {
+    req.body.status = 'STATUS_FALSO';
+    await orderController.updateOrderStatus(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  test('Deve retornar 404 se o pedido não existir', async () => {
+    db.query.mockResolvedValueOnce([[]]);
+    await orderController.updateOrderStatus(req, res);
+    expect(res.status).toHaveBeenCalledWith(404);
+  });
+
+  test('Deve atualizar o status e salvar log', async () => {
+    db.query.mockResolvedValueOnce([[{ id: 10, status: 'PAGO' }]]);
+    db.query.mockResolvedValueOnce([{ affectedRows: 1 }]); // Update
+    db.query.mockResolvedValueOnce([{ affectedRows: 1 }]); // Log
+    await orderController.updateOrderStatus(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('Deve retornar 500 se houver erro no banco ao atualizar status', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+    await orderController.updateOrderStatus(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+});
+
 describe('orderController.createPaymentIntent', () => {
   let req, res;
 
@@ -168,6 +203,28 @@ describe('orderController.createPaymentIntent', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'O carrinho está vazio.' });
+  });
+
+  test('Deve criar o payment intent com sucesso e retornar 200', async () => {
+    db.query.mockResolvedValueOnce([[{ id: 42 }]]); // Carrinho existe
+    db.query.mockResolvedValueOnce([[{ variacao_id: 1, quantidade: 2, preco: 100, nome: 'Perfume' }]]); // Itens
+    // Stripe mock já está configurado no topo do arquivo retornando 'pi_mock_secret_123'
+    
+    await orderController.createPaymentIntent(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      clientSecret: 'pi_mock_secret_123',
+      amount: 20000 // 2 * 100 * 100 centavos
+    });
+  });
+
+  test('Deve retornar 500 em caso de exceção', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    
+    await orderController.createPaymentIntent(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
   });
 });
 
@@ -286,5 +343,13 @@ describe('orderController.checkout', () => {
 
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  test('Deve retornar 500 se ocorrer exceção não mapeada', async () => {
+    mockConnection.query.mockRejectedValueOnce(new Error('Unexpected DB Error'));
+    await orderController.checkout(req, res);
+    expect(mockConnection.rollback).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Unexpected DB Error' });
   });
 });

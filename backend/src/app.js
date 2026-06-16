@@ -1,11 +1,29 @@
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 const db = require("./config/database");
 
 const app = express();
 
+// ===== SEGURANÇA: Helmet (Cabeçalhos HTTP seguros) =====
+// Protege contra XSS, Clickjacking, MIME Sniffing, etc.
+app.use(helmet());
+
 app.use(cors());
 app.use(express.json());
+
+// ===== SEGURANÇA: Rate Limiting no Login =====
+// Máximo 5 tentativas por IP a cada 15 minutos (Sprint 07 - AV3)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5,                    // 5 tentativas por IP
+  standardHeaders: true,     // Retorna info de rate limit nos headers `RateLimit-*`
+  legacyHeaders: false,      // Desabilita headers `X-RateLimit-*` antigos
+  message: {
+    error: "Muitas tentativas de login. Por segurança, tente novamente após 15 minutos."
+  }
+});
 
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -25,6 +43,7 @@ const swaggerDocument = require("../../docs/swagger.json");
 // Montando a Página do Swagger
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+app.use("/api/auth/login", loginLimiter);  // Rate limit APENAS no login
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", authMiddleware, cartRoutes);

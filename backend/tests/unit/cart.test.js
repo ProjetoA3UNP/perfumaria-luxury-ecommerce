@@ -104,6 +104,16 @@ describe('cartController.addItem', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Adicionar mais deste item excede o limite do estoque.' });
   });
+
+  test('Deve retornar 500 se houver erro no banco', async () => {
+    req.body = { variacao_id: 1, quantidade: 4 };
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+
+    await cartController.addItem(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro interno ao gerenciar sacola.' });
+  });
 });
 
 describe('cartController.updateItemQuantity', () => {
@@ -152,5 +162,70 @@ describe('cartController.updateItemQuantity', () => {
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ message: 'Quantidade atualizada no carrinho.' });
+  });
+
+  test('Deve retornar 500 se houver erro no banco ao atualizar quantidade', async () => {
+    req.body.quantidade = 5;
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+
+    await cartController.updateItemQuantity(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao atualizar carrinho.' });
+  });
+});
+
+describe('cartController.getCart', () => {
+  let req, res;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    req = { user: { id: 5 } };
+    res = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
+  });
+
+  test('Deve retornar 500 se houver erro no banco ao buscar carrinho', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    await cartController.getCart(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  test('Deve retornar os itens e o total calculado', async () => {
+    const mockItems = [
+      { subtotal: '150.00', produto_nome: 'Perfume A' },
+      { subtotal: '50.00', produto_nome: 'Perfume B' }
+    ];
+    db.query.mockResolvedValueOnce([mockItems]);
+
+    await cartController.getCart(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      itens: mockItems,
+      total: 200 // 150 + 50
+    });
+  });
+});
+
+describe('cartController.removeItem', () => {
+  let req, res;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    req = { user: { id: 5 }, params: { variacao_id: 10 } };
+    res = { status: jest.fn().mockReturnThis(), json: jest.fn().mockReturnThis() };
+  });
+
+  test('Deve retornar 500 se houver erro no banco ao remover item', async () => {
+    db.query.mockRejectedValueOnce(new Error('DB error'));
+    await cartController.removeItem(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+  });
+
+  test('Deve remover item com sucesso', async () => {
+    db.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await cartController.removeItem(req, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ message: 'Item removido com sucesso.' });
   });
 });

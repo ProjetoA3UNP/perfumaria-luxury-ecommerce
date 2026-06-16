@@ -82,4 +82,12 @@ describe('couponController.validate', () => {
       message: 'Cupom válido!'
     }));
   });
+
+  test('Deve retornar 500 se houver erro no banco', async () => {
+    req.body.codigo = 'ERRO';
+    db.query.mockRejectedValueOnce(new Error('DB Error'));
+    await couponController.validate(req, res);
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Erro ao validar cupom.' });
+  });
 });

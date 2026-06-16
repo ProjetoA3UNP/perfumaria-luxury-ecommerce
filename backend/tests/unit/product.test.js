@@ -148,6 +148,18 @@ describe('productController.getProductById', () => {
     expect(data.variacoes).toHaveLength(2);
   });
 
+  test('Deve incluir produto inativo na busca por id se all=true', async () => {
+    req.query.all = 'true';
+    db.query.mockResolvedValueOnce([[{ id: 1, nome: 'Inativo' }]]); // select produto
+    db.query.mockResolvedValueOnce([[]]); // select variacoes
+
+    await productController.getProductById(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const queryUsada = db.query.mock.calls[0][0];
+    expect(queryUsada).not.toContain('AND p.ativo = TRUE');
+  });
+
   test('Deve retornar 404 se o produto não for encontrado', async () => {
     db.query.mockResolvedValueOnce([[]]);
 
@@ -282,6 +294,19 @@ describe('productController.updateProduct', () => {
     );
   });
 
+  test('Deve atualizar todos os campos do produto (branch coverage)', async () => {
+    req.body = {
+      descricao: 'D', ingredientes: 'I', ocasiao_ideal: 'O', ativo: true
+    };
+    mockConnection.query.mockResolvedValueOnce([{ affectedRows: 1 }]);
+    await productController.updateProduct(req, res);
+    expect(mockConnection.commit).toHaveBeenCalled();
+    expect(mockConnection.query).toHaveBeenCalledWith(
+      expect.stringContaining('descricao = ?'),
+      expect.any(Array)
+    );
+  });
+
   test('Deve atualizar variações de preço e estoque', async () => {
     req.body.variacoes = [{ id: 10, preco: 999, estoque_qtd: 50 }];
     mockConnection.query.mockResolvedValueOnce([{ affectedRows: 1 }]); // UPDATE variação
@@ -290,6 +315,16 @@ describe('productController.updateProduct', () => {
 
     expect(mockConnection.commit).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('Deve atualizar variações passando apenas preco ou apenas estoque', async () => {
+    req.body.variacoes = [
+      { id: 10, preco: 999 },
+      { id: 11, estoque_qtd: 50 }
+    ];
+    mockConnection.query.mockResolvedValue([{ affectedRows: 1 }]);
+    await productController.updateProduct(req, res);
+    expect(mockConnection.commit).toHaveBeenCalled();
   });
 
   test('Deve fazer rollback se o update falhar', async () => {
