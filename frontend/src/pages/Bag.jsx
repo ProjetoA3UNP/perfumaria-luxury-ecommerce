@@ -34,6 +34,7 @@ function Bag() {
 
   const [toastMessage, setToastMessage] = useState("")
   const [toastType, setToastType] = useState("success")
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
 
   function showToast(message, type = "success") {
     setToastMessage(message)
@@ -75,9 +76,14 @@ function Bag() {
     }
   }
 
-  async function atualizarQuantidade(variacao_id, quantidadeAtual, incremento) {
+  async function atualizarQuantidade(variacao_id, quantidadeAtual, incremento, estoque_qtd) {
     const novaQuantidade = quantidadeAtual + incremento
     if (novaQuantidade < 1) return
+
+    if (estoque_qtd !== undefined && novaQuantidade > estoque_qtd) {
+      showToast(`Você atingiu o limite de estoque deste produto (${estoque_qtd} un)`, "error")
+      return
+    }
 
     try {
       await api.put(`/cart/update/${variacao_id}`, { quantidade: novaQuantidade })
@@ -87,6 +93,24 @@ function Bag() {
       console.error("Erro ao atualizar quantidade", error)
       const errorMsg = error.response?.data?.error || "Erro ao atualizar a quantidade."
       showToast(errorMsg, "error")
+    }
+  }
+
+  function removerTodos() {
+    if (sacola.length === 0) return
+    setShowConfirmModal(true)
+  }
+
+  async function confirmarRemoverTodos() {
+    setShowConfirmModal(false)
+    try {
+      await Promise.all(sacola.map(item => api.delete(`/cart/remove/${item.variacao_id}`)))
+      carregarSacola()
+      atualizarBadge()
+      showToast("Todos os produtos foram removidos da sacola.", "success")
+    } catch (error) {
+      console.error("Erro ao remover todos", error)
+      showToast("Erro ao remover todos os produtos.", "error")
     }
   }
 
@@ -219,13 +243,57 @@ function Bag() {
           {toastType === 'success' ? '✓' : '✕'} {toastMessage}
         </div>
       )}
+
+      {/* Modal de Confirmação Personalizado */}
+      {showConfirmModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center',
+          alignItems: 'center', zIndex: 10000, backdropFilter: 'blur(3px)'
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '12px', padding: '30px', width: '90%', maxWidth: '400px',
+            textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', fontFamily: "'Times New Roman', Times, serif"
+          }}>
+            <div style={{ fontSize: '40px', color: '#8c2b53', marginBottom: '15px' }}>⚠</div>
+            <h2 style={{ color: '#000', margin: '0 0 15px 0', fontSize: '22px' }}>Esvaziar Sacola</h2>
+            <p style={{ color: '#555', fontSize: '16px', marginBottom: '30px' }}>
+              Deseja realmente remover <b>todos os itens</b> da sua sacola?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+              <button 
+                onClick={() => setShowConfirmModal(false)}
+                style={{
+                  padding: '10px 20px', borderRadius: '25px', border: '1px solid #ccc',
+                  backgroundColor: '#f9f9f9', color: '#333', cursor: 'pointer', fontWeight: 'bold', width: '45%'
+                }}
+              >
+                CANCELAR
+              </button>
+              <button 
+                onClick={confirmarRemoverTodos}
+                style={{
+                  padding: '10px 20px', borderRadius: '25px', border: 'none',
+                  backgroundColor: '#8c2b53', color: '#fff', cursor: 'pointer', fontWeight: 'bold', width: '45%'
+                }}
+              >
+                SIM, REMOVER
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* LADO ESQUERDO: LISTA DE PRODUTOS */}
       <div className="bag-left">
-        <h1 style={{ textTransform: 'uppercase', margin: '0', fontSize: '24px' }}>SACOLA</h1>
-        <p style={{ textTransform: 'uppercase', margin: '5px 0 30px 0', fontSize: '14px', color: '#555' }}>
-          ({sacola.length} PRODUTO{sacola.length > 1 ? 'S' : ''})
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px' }}>
+          <div>
+            <h1 style={{ textTransform: 'uppercase', margin: '0', fontSize: '24px' }}>SACOLA</h1>
+            <p style={{ textTransform: 'uppercase', margin: '5px 0 0 0', fontSize: '14px', color: '#555' }}>
+              ({sacola.length} PRODUTO{sacola.length > 1 ? 'S' : ''})
+            </p>
+          </div>
+        </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {sacola.map((produto) => (
@@ -247,7 +315,7 @@ function Bag() {
                   </p>
                   <button 
                     onClick={() => removerProduto(produto.variacao_id)}
-                    style={{ background: 'none', border: 'none', color: '#555', textDecoration: 'underline', fontSize: '12px', cursor: 'pointer', padding: 0 }}
+                    style={{ background: 'none', border: 'none', color: '#8c2b53', textDecoration: 'underline', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', padding: 0, marginTop: 'auto' }}
                   >
                     Remover
                   </button>
@@ -258,7 +326,12 @@ function Bag() {
                 <div className="bag-quantity">
                   <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, -1)}>-</button>
                   <span style={{ fontSize: '16px', fontFamily: "'Times New Roman', Times, serif" }}>{produto.quantidade.toString().padStart(2, '0')}</span>
-                  <button onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, 1)}>+</button>
+                  <button 
+                    onClick={() => atualizarQuantidade(produto.variacao_id, produto.quantidade, 1, produto.estoque_qtd)}
+                    style={{ opacity: produto.quantidade >= produto.estoque_qtd ? 0.5 : 1, cursor: 'pointer' }}
+                  >
+                    +
+                  </button>
                 </div>
 
                 <strong style={{ fontSize: '18px', color: '#8c2b53' }}>
@@ -269,6 +342,18 @@ function Bag() {
             </div>
           ))}
         </div>
+
+        {/* BOTÃO REMOVER TODOS NO FINAL */}
+        {sacola.length > 0 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingRight: '10px' }}>
+            <button 
+              onClick={removerTodos} 
+              style={{ background: 'none', border: 'none', color: '#8c2b53', textDecoration: 'underline', fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', padding: '5px' }}
+            >
+              Remover Todos
+            </button>
+          </div>
+        )}
       </div>
 
       {/* LADO DIREITO: RESUMO E FRETE */}

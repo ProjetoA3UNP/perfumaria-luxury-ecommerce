@@ -81,6 +81,7 @@ const cartController = {
           p.nome AS produto_nome,
           v.volume_ml,
           v.preco AS preco_unitario,
+          v.estoque_qtd,
           i.quantidade,
           (v.preco * i.quantidade) AS subtotal,
           (SELECT url FROM imagens_produto ip WHERE ip.produto_id = p.id AND ip.principal = 1 LIMIT 1) AS imagem

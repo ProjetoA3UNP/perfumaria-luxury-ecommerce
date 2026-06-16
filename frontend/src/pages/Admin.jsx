@@ -15,6 +15,26 @@ import { Bar, Doughnut } from "react-chartjs-2"
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Title, Tooltip, Legend)
 
+// Helper Component para o botão de Info (i) nos cards do dashboard
+function InfoIcon({ titulo, descricao, setInfoModalCard }) {
+  return (
+    <button 
+      onClick={() => setInfoModalCard({ titulo, descricao })}
+      title="Informações sobre esta métrica"
+      className="admin-info-btn no-print"
+      style={{
+        position: 'absolute', top: '15px', right: '15px', background: 'none',
+        border: '1px solid #8c2b53', borderRadius: '50%', color: '#8c2b53',
+        width: '22px', height: '22px', fontSize: '14px', fontFamily: 'serif',
+        cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        fontWeight: 'bold', zIndex: 5, paddingBottom: '1px'
+      }}
+    >
+      i
+    </button>
+  );
+}
+
 const STATUS_LABELS = {
   AGUARDANDO_PAGAMENTO: "Aguardando",
   PAGO: "Pago",
@@ -64,6 +84,7 @@ function Admin() {
   const [pedidosLoading, setPedidosLoading] = useState(false)
   const [salvandoStatus, setSalvandoStatus] = useState(null)
   const [statusLogs, setStatusLogs] = useState([])
+  const [infoModalCard, setInfoModalCard] = useState(null) // Modal de info dos cards
 
   // === Estados do Modal de Exportação ===
   const [modalExportAberto, setModalExportAberto] = useState(false)
@@ -659,6 +680,11 @@ function Admin() {
                 {/* KPIs */}
                 <div className="dash-kpis">
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Faturamento Total" 
+                      descricao="Soma de todos os pagamentos recebidos com sucesso. Pedidos pendentes ou cancelados não são contabilizados neste valor." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">💰</span>
                     <div>
                       <p className="dash-kpi-label">Faturamento Total</p>
@@ -666,6 +692,11 @@ function Admin() {
                     </div>
                   </div>
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Total de Pedidos" 
+                      descricao="Número bruto de pedidos realizados na loja, incluindo todas as situações (pagos, pendentes, recusados)." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">📦</span>
                     <div>
                       <p className="dash-kpi-label">Total de Pedidos</p>
@@ -673,6 +704,11 @@ function Admin() {
                     </div>
                   </div>
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Ticket Médio" 
+                      descricao="Valor médio gasto por cada cliente por pedido pago. Calculado dividindo o faturamento total pelo número de pedidos pagos." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">🎯</span>
                     <div>
                       <p className="dash-kpi-label">Ticket Médio</p>
@@ -680,6 +716,11 @@ function Admin() {
                     </div>
                   </div>
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Clientes Cadastrados" 
+                      descricao="Quantidade total de usuários registrados no sistema com o perfil CLIENTE (exclui administradores)." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">👥</span>
                     <div>
                       <p className="dash-kpi-label">Clientes Cadastrados</p>
@@ -687,6 +728,11 @@ function Admin() {
                     </div>
                   </div>
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Perfumes no Catálogo" 
+                      descricao="Soma de produtos que estão com o status ATIVO na loja para os clientes poderem comprar." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">🧴</span>
                     <div>
                       <p className="dash-kpi-label">Perfumes no Catálogo</p>
@@ -694,6 +740,11 @@ function Admin() {
                     </div>
                   </div>
                   <div className="dash-kpi-card">
+                    <InfoIcon 
+                      titulo="Itens em Estoque" 
+                      descricao="Contagem de todas as variações unitárias e volumes de ML que temos disponíveis fisicamente em nosso estoque." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <span className="dash-kpi-icon">📋</span>
                     <div>
                       <p className="dash-kpi-label">Itens em Estoque</p>
@@ -705,6 +756,11 @@ function Admin() {
                 {/* Gráficos */}
                 <div className="dash-charts">
                   <div className="dash-chart-card dash-chart-wide">
+                    <InfoIcon 
+                      titulo="Faturamento por Mês" 
+                      descricao="Gráfico que apresenta a curva de faturamento separada mensalmente para análise de crescimento." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <h3>Faturamento por Mês</h3>
                     {vendasPorMesData && vendasPorMesData.labels.length > 0 ? (
                       <Bar data={vendasPorMesData} options={{
@@ -716,6 +772,11 @@ function Admin() {
                   </div>
 
                   <div className="dash-chart-card">
+                    <InfoIcon 
+                      titulo="Status dos Pedidos" 
+                      descricao="Gráfico de rosca evidenciando a distribuição atual dos pedidos: pagos, recusados e aguardando processamento." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <h3>Status dos Pedidos</h3>
                     {statusData && statusData.labels.length > 0 ? (
                       <Doughnut data={statusData} options={{
@@ -726,6 +787,11 @@ function Admin() {
                   </div>
 
                   <div className="dash-chart-card">
+                    <InfoIcon 
+                      titulo="Top Categorias Vendidas" 
+                      descricao="Mede quais categorias (Casual, Elegante, Esportivo...) geram maior engajamento e quantidade de vendas." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <h3>Top Categorias Vendidas</h3>
                     {topCategoriasData && topCategoriasData.labels.length > 0 ? (
                       <Bar data={topCategoriasData} options={{
@@ -741,6 +807,11 @@ function Admin() {
                 <div className="dash-tables">
                   {/* Top Vendidos */}
                   <div className="dash-table-card">
+                    <InfoIcon 
+                      titulo="Top 10 Perfumes Mais Vendidos" 
+                      descricao="Tabela ranqueada dos 10 perfumes com maior faturamento e unidades vendidas, os verdadeiros carros-chefes da loja." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <h3>🏆 Top 10 Perfumes Mais Vendidos</h3>
                     {metrics.topVendidos.length > 0 ? (
                       <>
@@ -789,6 +860,11 @@ function Admin() {
 
                   {/* Top Favoritados */}
                   <div className="dash-table-card">
+                    <InfoIcon 
+                      titulo="Top 10 Perfumes Mais Favoritados" 
+                      descricao="Tabela ranqueada dos 10 perfumes mais curtidos pelos usuários, ajudando a traçar tendências para marketing ou promoções." 
+                      setInfoModalCard={setInfoModalCard} 
+                    />
                     <h3>❤️ Top 10 Perfumes Mais Favoritados</h3>
                     {metrics.topFavoritados.length > 0 ? (
                       <>
@@ -1992,6 +2068,45 @@ function Admin() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* === Modal de Informação (Botão i) === */}
+      {infoModalCard && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', justifyContent: 'center',
+          alignItems: 'center', zIndex: 10000, backdropFilter: 'blur(3px)'
+        }}>
+          <div style={{
+            backgroundColor: '#fff', borderRadius: '12px', padding: '30px', width: '90%', maxWidth: '400px',
+            textAlign: 'center', boxShadow: '0 15px 35px rgba(0,0,0,0.2)', fontFamily: "'Times New Roman', Times, serif",
+            position: 'relative'
+          }}>
+            <button 
+              onClick={() => setInfoModalCard(null)}
+              style={{
+                position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none',
+                fontSize: '20px', cursor: 'pointer', color: '#555'
+              }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: '40px', color: '#8c2b53', marginBottom: '15px' }}>i</div>
+            <h2 style={{ color: '#000', margin: '0 0 15px 0', fontSize: '22px' }}>{infoModalCard.titulo}</h2>
+            <p style={{ color: '#555', fontSize: '16px', marginBottom: '30px', lineHeight: '1.5' }}>
+              {infoModalCard.descricao}
+            </p>
+            <button 
+              onClick={() => setInfoModalCard(null)}
+              style={{
+                padding: '10px 20px', borderRadius: '25px', border: 'none', width: '100%',
+                backgroundColor: '#8c2b53', color: '#fff', cursor: 'pointer', fontWeight: 'bold'
+              }}
+            >
+              ENTENDI
+            </button>
           </div>
         </div>
       )}

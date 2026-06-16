@@ -295,21 +295,24 @@ function Product() {
           {/* Variações de tamanho */}
           {produto.variacoes && produto.variacoes.length > 1 && (
             <div style={{ display: 'flex', gap: '8px', margin: '15px 0' }}>
-              {produto.variacoes.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setVariacaoSelecionada(v)}
-                  style={{
-                    padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
-                    fontFamily: "'Times New Roman', Times, serif", fontSize: '13px', textTransform: 'uppercase',
-                    border: variacaoSelecionada?.id === v.id ? '2px solid #8c2b53' : '1px solid #ccc',
-                    backgroundColor: variacaoSelecionada?.id === v.id ? '#f9f0f4' : '#fff',
-                    color: variacaoSelecionada?.id === v.id ? '#8c2b53' : '#555'
-                  }}
-                >
-                  {v.volume_ml}ml
-                </button>
-              ))}
+              {produto.variacoes.map((v) => {
+                const esgotado = Number(v.estoque_qtd) === 0;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => setVariacaoSelecionada(v)}
+                    style={{
+                      padding: '6px 14px', borderRadius: '20px', cursor: 'pointer',
+                      fontFamily: "'Times New Roman', Times, serif", fontSize: '13px', textTransform: 'uppercase',
+                      border: variacaoSelecionada?.id === v.id ? (esgotado ? '2px solid #9ca3af' : '2px solid #8c2b53') : '1px solid #ccc',
+                      backgroundColor: esgotado ? '#e5e7eb' : (variacaoSelecionada?.id === v.id ? '#f9f0f4' : '#fff'),
+                      color: esgotado ? '#9ca3af' : (variacaoSelecionada?.id === v.id ? '#8c2b53' : '#555')
+                    }}
+                  >
+                    {v.volume_ml}ml
+                  </button>
+                )
+              })}
             </div>
           )}
 
@@ -348,9 +351,30 @@ function Product() {
 
           {!isAdmin && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '30px' }}>
-              <button className="sacola-button" onClick={adicionarSacola} style={{ backgroundColor: '#d8b8c8', color: '#000', border: 'none', borderRadius: '8px', padding: '12px 25px', width: '220px', fontSize: '14px', fontFamily: "'Times New Roman', Times, serif", fontWeight: 'bold', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-                SACOLA
-                <img src={sacolaIcon} alt="Sacola" style={{ width: '18px', height: '18px', filter: 'brightness(0)' }} />
+              <button 
+                className="sacola-button" 
+                onClick={adicionarSacola} 
+                disabled={variacaoSelecionada?.estoque_qtd === 0}
+                style={{ 
+                  backgroundColor: variacaoSelecionada?.estoque_qtd === 0 ? '#e5e7eb' : '#d8b8c8', 
+                  color: variacaoSelecionada?.estoque_qtd === 0 ? '#9ca3af' : '#000', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  padding: '12px 25px', 
+                  width: '220px', 
+                  fontSize: '14px', 
+                  fontFamily: "'Times New Roman', Times, serif", 
+                  fontWeight: 'bold', 
+                  textTransform: 'uppercase', 
+                  cursor: variacaoSelecionada?.estoque_qtd === 0 ? 'not-allowed' : 'pointer', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '15px' 
+                }}
+              >
+                {variacaoSelecionada?.estoque_qtd === 0 ? "ESGOTADO" : "SACOLA"}
+                {variacaoSelecionada?.estoque_qtd !== 0 && <img src={sacolaIcon} alt="Sacola" style={{ width: '18px', height: '18px', filter: 'brightness(0)' }} />}
               </button>
             </div>
           )}

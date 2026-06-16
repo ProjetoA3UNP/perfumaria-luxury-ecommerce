@@ -16,12 +16,29 @@ function ProductCard({
   nome,
   preco,
   descricao,
+  estoque_qtd, // <- Nova prop
+  variacao_estoque, // <- Nova prop
+  variacoes, // <- Nova prop (Lista de variações do backend)
   isFavoritos = false,
   isAdmin = false,
 }) {
   const navigate = useNavigate()
   const { atualizarBadge, atualizarFavoritosBadge } = useContext(CartContext)
   const [mensagem, setMensagem] = useState("")
+
+  // Estado local para a variação selecionada no card
+  const [variacaoSel, setVariacaoSel] = useState(() => {
+    // Inicializa com a variação padrão recebida nas props
+    return {
+      id: variacao_id,
+      volume_ml: volume_ml,
+      preco: preco,
+      estoque_qtd: variacao_estoque ?? estoque_qtd
+    }
+  })
+
+  // Parse das variações caso venham como string JSON do MySQL
+  const variacoesList = typeof variacoes === 'string' ? JSON.parse(variacoes) : (variacoes || [])
 
   // Detectar admin automaticamente
   const adminCheck = isAdmin || (() => {
@@ -35,7 +52,7 @@ function ProductCard({
     return Number(valor).toFixed(2).replace(".", ",")
   }
 
-  const precoParcelado = (Number(preco) / 8).toFixed(2).replace(".", ",")
+  const precoParcelado = (Number(variacaoSel.preco) / 8).toFixed(2).replace(".", ",")
 
   function mostrarMensagem(texto) {
     setMensagem(texto)
@@ -76,9 +93,9 @@ function ProductCard({
 
     try {
       // Se tivermos a variação base, enviamos para a sacola. Caso contrário, alertamos.
-      if (!variacao_id) throw new Error("Variação indisponível");
+      if (!variacaoSel.id) throw new Error("Variação indisponível");
       
-      await api.post("/cart/add", { variacao_id: variacao_id, quantidade: 1 })
+      await api.post("/cart/add", { variacao_id: variacaoSel.id, quantidade: 1 })
       atualizarBadge()
       mostrarMensagem("Adicionado à sacola")
     } catch (error) {
@@ -114,18 +131,57 @@ function ProductCard({
         <h3 className="canvas-nome">
           {nome} {descricao ? ` - ${descricao}` : ""}
         </h3>
+        
+        {/* Variações de tamanho no Card */}
+        {variacoesList && variacoesList.length > 1 && (
+          <div style={{ display: 'flex', gap: '5px', marginTop: '10px', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+            {variacoesList.map((v) => {
+              const esgotado = Number(v.estoque_qtd) === 0;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setVariacaoSel(v)}
+                  style={{
+                    padding: '4px 8px', borderRadius: '15px', cursor: 'pointer',
+                    fontFamily: "'Times New Roman', Times, serif", fontSize: '11px', textTransform: 'uppercase',
+                    border: variacaoSel.id === v.id ? (esgotado ? '1px solid #9ca3af' : '1px solid #8c2b53') : '1px solid #ccc',
+                    backgroundColor: esgotado ? '#e5e7eb' : (variacaoSel.id === v.id ? '#f9f0f4' : '#fff'),
+                    color: esgotado ? '#9ca3af' : (variacaoSel.id === v.id ? '#8c2b53' : '#555')
+                  }}
+                >
+                  {v.volume_ml}ml
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div className="canvas-card-bottom">
         <div className="canvas-price-container">
           <p className="price canvas-price" style={{ fontSize: '14px' }}>
-            A PARTIR DE R$ {formatarPreco(preco)} {volume_ml ? `(${volume_ml} ML)` : ''}
+            A PARTIR DE R$ {formatarPreco(variacaoSel.preco)} {variacaoSel.volume_ml ? `(${variacaoSel.volume_ml} ML)` : ''}
           </p>
           <p className="installment canvas-installment">OU 8X DE R$ {precoParcelado}</p>
         </div>
         {!adminCheck && (
-          <button className="bag-button canvas-bag-button" onClick={adicionarSacola}>
-            <img src={sacolaIcon} alt="Adicionar" className="canvas-bag-icon" />
+          <button 
+            className="bag-button canvas-bag-button" 
+            onClick={adicionarSacola}
+            disabled={Number(variacaoSel.estoque_qtd) === 0}
+            style={{ 
+              backgroundColor: Number(variacaoSel.estoque_qtd) === 0 ? '#e5e7eb' : '', 
+              cursor: Number(variacaoSel.estoque_qtd) === 0 ? 'not-allowed' : 'pointer',
+              width: Number(variacaoSel.estoque_qtd) === 0 ? 'auto' : '',
+              padding: Number(variacaoSel.estoque_qtd) === 0 ? '0 10px' : ''
+            }}
+            title={Number(variacaoSel.estoque_qtd) === 0 ? "Produto Esgotado" : "Adicionar à Sacola"}
+          >
+            {Number(variacaoSel.estoque_qtd) === 0 ? (
+               <span style={{ fontSize: '10px', fontWeight: 'bold', color: '#9ca3af' }}>ESGOTADO</span>
+            ) : (
+               <img src={sacolaIcon} alt="Adicionar" className="canvas-bag-icon" />
+            )}
           </button>
         )}
       </div>
