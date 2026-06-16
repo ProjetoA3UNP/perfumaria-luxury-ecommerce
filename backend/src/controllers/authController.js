@@ -2,14 +2,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 
+// ===== SEGURANÇA: Sanitização de Entradas (Sprint 07) =====
+// Remove tags HTML e scripts maliciosos para prevenir ataques XSS
+function sanitizeInput(str) {
+  if (typeof str !== 'string') return str;
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
 const authController = {
   // US01: Cadastro de nova conta
   async register(req, res) {
-    const { nome, email, cpf, senha, data_nascimento } = req.body;
+    // Sanitiza entradas antes de processar (proteção XSS)
+    const nome = sanitizeInput(req.body.nome);
+    const email = sanitizeInput(req.body.email);
+    const cpf = sanitizeInput(req.body.cpf);
+    const senha = req.body.senha; // Senha não é sanitizada pois será hasheada
+    const data_nascimento = req.body.data_nascimento;
 
     // VALIDAÇÕES AV3: Formato do email e Segurança da Senha
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !email.includes('@')) {
       return res.status(400).json({ error: "Por favor, forneça um e-mail em formato válido." });
     }
     
@@ -56,7 +67,9 @@ const authController = {
 
   // US02: Login na plataforma
   async login(req, res) {
-    const { email, senha } = req.body;
+    // Sanitiza entradas antes de processar (proteção XSS)
+    const email = sanitizeInput(req.body.email);
+    const senha = req.body.senha;
 
     try {
       const [users] = await db.query("SELECT * FROM usuarios WHERE email = ?", [email]);
@@ -98,21 +111,18 @@ const authController = {
 
   // Simulação de Esqueci minha Senha (apenas valida se o e-mail existe no banco)
   async forgotPassword(req, res) {
-    const { email } = req.body;
+    const email = sanitizeInput(req.body.email);
 
     if (!email) {
       return res.status(400).json({ error: "E-mail não fornecido." });
     }
 
     try {
-      const [users] = await db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+      // Fazemos a query mas não expomos se a conta existe ou não para evitar User Enumeration
+      await db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
       
-      if (users.length === 0) {
-        return res.status(404).json({ error: "Não encontramos uma conta associada a este e-mail." });
-      }
-
       // Em um cenário real, enviaríamos um e-mail com token/link
-      return res.status(200).json({ message: "Instruções de recuperação enviadas com sucesso!" });
+      return res.status(200).json({ message: "Se o e-mail estiver cadastrado, as instruções foram enviadas." });
 
     } catch (error) {
       console.error("Erro na recuperação de senha:", error);

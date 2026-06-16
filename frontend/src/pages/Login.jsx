@@ -58,7 +58,7 @@ function Login() {
       return
     }
 
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const emailValido = email.includes('@')
     
     // Se o usuário corrigiu o erro e o e-mail está válido, limpa imediatamente (feedback positivo instantâneo)
     if (emailValido) {
@@ -100,7 +100,7 @@ function Login() {
   // Validação instantânea no Blur (quando o usuário sai do campo)
   function validarEmailBlur() {
     if (!email) return
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const emailValido = email.includes('@')
     if (!emailValido) {
       setErroEmail("Por favor, insira um e-mail em formato válido.")
     } else {

@@ -38,7 +38,7 @@ function Register() {
       setErroEmail("")
       return
     }
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const emailValido = email.includes('@')
     if (emailValido) {
       setErroEmail("")
       return
@@ -121,7 +121,7 @@ function Register() {
   // Validadores instantâneos no desfoque (Blur)
   function validarEmailBlur() {
     if (!email) return
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const emailValido = email.includes('@')
     setErroEmail(emailValido ? "" : "Por favor, insira um e-mail em formato válido.")
   }
 
@@ -167,7 +167,7 @@ function Register() {
 
     // Validação de segurança final antes de bater na API
     const cpfLimpo = cpf.replace(/\D/g, '')
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    const emailValido = email.includes('@')
     const nomeValido = nome.trim().length >= 3
     const cpfValido = cpfLimpo.length === 11
     const dataValida = /^\d{2}\/\d{2}\/\d{4}$/.test(dataNascimento)
