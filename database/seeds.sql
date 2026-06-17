@@ -118,3 +118,59 @@ INSERT IGNORE INTO imagens_produto (produto_id, url, ordem, principal) VALUES
 (15, '/products/chanel_5.jpg', 1, TRUE),
 (16, '/products/ck_one.jpg', 1, TRUE),
 (17, '/products/verveine.jpg', 1, TRUE);
+
+-- 8. Injetando Endereços
+INSERT IGNORE INTO enderecos (id, usuario_id, titulo, cep, bairro, rua, numero, complemento, principal) VALUES
+(1, 1, 'Casa Oficial', '59030640', 'Barro Vermelho', 'Rua Principal', '1797', 'Apt 1', 1),
+(2, 2, 'Trabalho', '59075270', 'Nova Descoberta', 'Rua do Sul', '02', '', 1),
+(3, 3, 'Casa', '59129430', 'Potengi', 'Avenida Central', '120', '', 1),
+(4, 4, 'Casa Praia', '59000000', 'Ponta Negra', 'Rua do Mar', '45', 'Casa 2', 1);
+
+-- 9. Injetando Cupons de Desconto
+INSERT IGNORE INTO cupons (id, codigo, desconto_percentual, desconto_valor, validade, ativo) VALUES 
+(1, 'DESC10', 10.00, NULL, '2027-12-31', 1),
+(2, 'DESC20', 20.00, NULL, '2027-12-31', 1),
+(3, 'FRETE0', NULL, 30.00, '2027-12-31', 1),
+(4, 'BEMVINDO', 15.00, NULL, '2027-12-31', 1);
+
+-- 10. Injetando Avaliações (Resenhas)
+INSERT IGNORE INTO avaliacoes (id, produto_id, usuario_id, nota, comentario) VALUES
+(1, 1, 2, 5, 'Perfume maravilhoso, fixação de mais de 10 horas na minha pele!'),
+(2, 2, 3, 4, 'Muito bom, mas achei um pouco forte pro dia a dia.'),
+(3, 3, 4, 5, 'Cheiro de gente rica. Simplesmente o melhor Oud que já senti.'),
+(4, 4, 2, 5, 'Incrível. Vale cada centavo.'),
+(5, 5, 5, 4, 'Floral muito agradável, ótimo para a primavera.');
+
+-- 11. Injetando Favoritos (Wishlist)
+INSERT IGNORE INTO favoritos (id, usuario_id, produto_id) VALUES
+(1, 2, 1),
+(2, 2, 3),
+(3, 3, 2),
+(4, 4, 5);
+
+-- 12. Injetando Carrinho Ativo (Para testes rápidos de Checkout)
+INSERT IGNORE INTO carrinho (id, usuario_id) VALUES
+(1, 2),
+(2, 3);
+
+INSERT IGNORE INTO itens_carrinho (carrinho_id, variacao_id, quantidade) VALUES
+(1, 1, 2), -- Cliente 2 tem 2 Bleu de Chanel (50ml) na sacola
+(1, 3, 1), -- Cliente 2 tem 1 Sauvage (60ml) na sacola
+(2, 7, 1); -- Cliente 3 tem 1 Aventus (50ml) na sacola
+
+-- 13. Injetando Vendas (Histórico de Pedidos e Logs)
+INSERT IGNORE INTO vendas (id, usuario_id, numero_pedido, valor_total, forma_pagamento, stripe_payment_id, endereco_entrega_id, cupom_id, status) VALUES
+(1, 2, 'PED-037588', 3450.00, 'CARTAO_CREDITO', 'pi_mock_stripe_1', 2, NULL, 'PAGO'),
+(2, 3, 'PED-742016', 3900.00, 'PIX', 'pix_mock_banco_1', 3, 1, 'ENVIADO'),
+(3, 4, 'PED-275819', 1100.00, 'CARTAO_CREDITO', 'pi_mock_stripe_2', 4, NULL, 'ENTREGUE');
+
+INSERT IGNORE INTO itens_venda (venda_id, variacao_id, quantidade, preco_unitario) VALUES
+(1, 1, 1, 850.00),
+(1, 8, 1, 2600.00),
+(2, 4, 1, 3900.00),
+(3, 6, 1, 1100.00);
+
+INSERT IGNORE INTO log_status_pedidos (venda_id, status_anterior, status_novo, admin_id, admin_nome) VALUES
+(2, 'PAGO', 'ENVIADO', 1, 'Admin Supremo'),
+(3, 'PAGO', 'ENVIADO', 1, 'Admin Supremo'),
+(3, 'ENVIADO', 'ENTREGUE', 1, 'Admin Supremo');
