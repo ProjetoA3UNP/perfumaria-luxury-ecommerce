@@ -72,6 +72,60 @@
         }
       }
     },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": ["Autenticação"],
+        "summary": "Solicita recuperação de senha",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "usuario@email.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Instruções enviadas para o e-mail." }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": ["Autenticação (Protegido)"],
+        "summary": "Retorna os dados do usuário logado",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do usuário retornados com sucesso." }
+        }
+      },
+      "put": {
+        "tags": ["Autenticação (Protegido)"],
+        "summary": "Atualiza os dados do usuário logado",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nome": { "type": "string", "example": "João da Silva Sauro" },
+                  "data_nascimento": { "type": "string", "example": "1994-10-25" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Perfil atualizado." }
+        }
+      }
+    },
     "/api/products": {
       "get": {
         "tags": ["Catálogo"],
@@ -81,8 +135,9 @@
         }
       },
       "post": {
-        "tags": ["Catálogo"],
-        "summary": "Cadastra um novo perfume (Requer Transação)",
+        "tags": ["Catálogo (Admin)"],
+        "summary": "Cadastra um novo perfume (Requer Admin)",
+        "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
           "content": {
@@ -92,16 +147,7 @@
                 "properties": {
                   "nome": { "type": "string", "example": "Versace Eros" },
                   "marca_id": { "type": "integer", "example": 8 },
-                  "categoria_id": { "type": "integer", "example": 3 },
-                  "familia_olfativa_id": { "type": "integer", "example": 7 },
-                  "preco": { "type": "number", "example": 650.00 },
-                  "estoque_qtd": { "type": "integer", "example": 20 },
-                  "descricao": { "type": "string", "example": "O amor, a paixão." },
-                  "ingredientes": { "type": "string", "example": "Menta, Limão" },
-                  "ocasiao_ideal": { "type": "string", "example": "Baladas" },
-                  "topo": { "type": "string", "example": "Hortelã, Limão" },
-                  "coracao": { "type": "string", "example": "Ambroxan" },
-                  "base": { "type": "string", "example": "Baunilha" }
+                  "preco": { "type": "number", "example": 650.00 }
                 }
               }
             }
@@ -109,6 +155,39 @@
         },
         "responses": {
           "201": { "description": "Perfume criado." }
+        }
+      }
+    },
+    "/api/products/menu-filters": {
+      "get": {
+        "tags": ["Catálogo"],
+        "summary": "Retorna os filtros para o menu (categorias, marcas, famílias)",
+        "responses": {
+          "200": { "description": "Filtros retornados com sucesso." }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Catálogo"],
+        "summary": "Busca detalhes e pirâmide olfativa de um perfume específico",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Perfume retornado com sucesso." },
+          "404": { "description": "Perfume não encontrado." }
+        }
+      },
+      "put": {
+        "tags": ["Catálogo (Admin)"],
+        "summary": "Atualiza os dados de um produto",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Produto atualizado com sucesso." }
         }
       }
     },
@@ -125,7 +204,7 @@
     "/api/cart/add": {
       "post": {
         "tags": ["Carrinho (Protegido)"],
-        "summary": "Adiciona um perfume ao carrinho e trava o estoque",
+        "summary": "Adiciona um perfume ao carrinho",
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
           "required": true,
@@ -135,51 +214,120 @@
                 "type": "object",
                 "properties": {
                   "produto_id": { "type": "integer", "example": 1 },
-                  "quantidade": { "type": "integer", "example": 1 }
+                  "quantidade": { "type": "integer", "example": 1 },
+                  "variacao_id": { "type": "integer", "example": 2 }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": { "description": "Item adicionado." },
-          "400": { "description": "Quantidade excede o estoque." }
+          "200": { "description": "Item adicionado." }
         }
       }
     },
-    "/api/cart/remove/{id}": {
+    "/api/cart/update/{variacao_id}": {
+      "put": {
+        "tags": ["Carrinho (Protegido)"],
+        "summary": "Atualiza a quantidade de um item no carrinho",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "variacao_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quantidade": { "type": "integer", "example": 2 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Quantidade atualizada." }
+        }
+      }
+    },
+    "/api/cart/remove/{variacao_id}": {
       "delete": {
         "tags": ["Carrinho (Protegido)"],
         "summary": "Remove um item do carrinho",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
+          { "name": "variacao_id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": { "description": "Removido com sucesso." }
         }
       }
     },
-    "/api/products/{id}": {
-      "get": {
-        "tags": ["Catálogo"],
-        "summary": "Busca detalhes e pirâmide olfativa de um perfume específico",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
+    "/api/coupons/validate": {
+      "post": {
+        "tags": ["Cupons (Protegido)"],
+        "summary": "Valida um código de cupom",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "codigo": { "type": "string", "example": "PRIMEIRA10" }
+                }
+              }
+            }
           }
+        },
+        "responses": {
+          "200": { "description": "Cupom válido." },
+          "400": { "description": "Cupom inválido ou expirado." }
+        }
+      }
+    },
+    "/api/addresses": {
+      "get": {
+        "tags": ["Endereços (Protegido)"],
+        "summary": "Lista os endereços do usuário",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Endereços retornados." }
+        }
+      },
+      "post": {
+        "tags": ["Endereços (Protegido)"],
+        "summary": "Adiciona um novo endereço",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Endereço criado." }
+        }
+      }
+    },
+    "/api/addresses/{id}": {
+      "put": {
+        "tags": ["Endereços (Protegido)"],
+        "summary": "Atualiza um endereço",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
-          "200": { "description": "Perfume retornado com sucesso." },
-          "404": { "description": "Perfume não encontrado." }
+          "200": { "description": "Endereço atualizado." }
+        }
+      },
+      "delete": {
+        "tags": ["Endereços (Protegido)"],
+        "summary": "Deleta um endereço",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Endereço deletado." }
         }
       }
     },
@@ -196,21 +344,8 @@
         "tags": ["Favoritos (Protegido)"],
         "summary": "Adiciona um perfume aos favoritos",
         "security": [{ "bearerAuth": [] }],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "produto_id": { "type": "integer", "example": 1 }
-                }
-              }
-            }
-          }
-        },
         "responses": {
-          "200": { "description": "Adicionado aos favoritos com sucesso." }
+          "201": { "description": "Adicionado aos favoritos com sucesso." }
         }
       }
     },
@@ -220,12 +355,7 @@
         "summary": "Remove um perfume dos favoritos",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
-          {
-            "name": "produto_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
+          { "name": "produto_id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": { "description": "Removido dos favoritos." }
@@ -234,30 +364,52 @@
     },
     "/api/orders": {
       "get": {
-        "tags": ["Pedidos e Histórico (Protegido)"],
-        "summary": "Lista o histórico de compras concluídas do usuário",
+        "tags": ["Pedidos e Checkout (Protegido)"],
+        "summary": "Lista o histórico de compras do usuário",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Histórico completo com itens do pedido retornado." }
+          "200": { "description": "Histórico retornado." }
         }
       }
     },
     "/api/orders/create-payment-intent": {
       "post": {
-        "tags": ["Checkout e Stripe (Protegido)"],
-        "summary": "Gera intenção de pagamento na Stripe e devolve o Client Secret para o Cartão",
+        "tags": ["Pedidos e Checkout (Protegido)"],
+        "summary": "Gera intenção de pagamento na Stripe",
         "security": [{ "bearerAuth": [] }],
         "responses": {
-          "200": { "description": "Token de intenção de pagamento gerado com sucesso pela Stripe." },
-          "400": { "description": "Carrinho vazio ou estoque insuficiente na hora do pagamento." }
+          "200": { "description": "Token gerado (clientSecret)." }
         }
       }
     },
     "/api/orders/checkout": {
       "post": {
-        "tags": ["Checkout e Stripe (Protegido)"],
-        "summary": "Finaliza o pedido após confirmação de pagamento do Frontend",
+        "tags": ["Pedidos e Checkout (Protegido)"],
+        "summary": "Finaliza o pedido",
         "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Pedido salvo com sucesso!" }
+        }
+      }
+    },
+    "/api/orders/admin/all": {
+      "get": {
+        "tags": ["Pedidos (Admin)"],
+        "summary": "Lista todos os pedidos (Requer Admin)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Pedidos retornados." }
+        }
+      }
+    },
+    "/api/orders/admin/{id}/status": {
+      "patch": {
+        "tags": ["Pedidos (Admin)"],
+        "summary": "Atualiza o status de um pedido e registra log",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -265,16 +417,70 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "endereco_id": { "type": "integer", "example": 2 },
-                  "paymentIntentId": { "type": "string", "example": "pi_3MxtJgLkd..." }
+                  "novo_status": { "type": "string", "example": "ENVIADO" }
                 }
               }
             }
           }
         },
         "responses": {
-          "201": { "description": "Pedido salvo com sucesso e carrinho esvaziado!" },
-          "400": { "description": "Problemas na transação final." }
+          "200": { "description": "Status atualizado." }
+        }
+      }
+    },
+    "/api/orders/admin/logs": {
+      "get": {
+        "tags": ["Pedidos (Admin)"],
+        "summary": "Retorna o log de alterações de status",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Logs retornados." }
+        }
+      }
+    },
+    "/api/reviews/{produto_id}": {
+      "get": {
+        "tags": ["Avaliações"],
+        "summary": "Retorna as avaliações de um produto",
+        "parameters": [
+          { "name": "produto_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Avaliações retornadas." }
+        }
+      }
+    },
+    "/api/reviews": {
+      "post": {
+        "tags": ["Avaliações (Protegido)"],
+        "summary": "Cria uma nova avaliação para um produto",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": { "description": "Avaliação criada com sucesso." },
+          "403": { "description": "Usuário não comprou o produto." }
+        }
+      }
+    },
+    "/api/reviews/can-review/{produto_id}": {
+      "get": {
+        "tags": ["Avaliações (Protegido)"],
+        "summary": "Verifica se o usuário pode avaliar o produto",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "produto_id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Status de permissão retornado." }
+        }
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": ["Dashboard (Admin)"],
+        "summary": "Retorna métricas administrativas (faturamento, totais)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Métricas retornadas com sucesso." }
         }
       }
     }
