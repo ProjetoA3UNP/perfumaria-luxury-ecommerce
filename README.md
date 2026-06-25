@@ -1,5 +1,6 @@
 # 💎 Essence - E-Commerce de Perfumaria de Luxo e Nicho
 
+> 🌐 **Acesse o projeto online:** [https://essence-store.onrender.com/](https://essence-store.onrender.com/)
 ![Status](https://img.shields.io/badge/Status-Release_1.0-success)
 ![Node.js](https://img.shields.io/badge/Node.js-Backend-339933?logo=node.js)
 ![React](https://img.shields.io/badge/React-Frontend-61DAFB?logo=react)
