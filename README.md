@@ -30,6 +30,27 @@
 
 ---
 
+## 📸 Telas do Sistema
+
+Para ilustrar a interface e o funcionamento da plataforma, abaixo estão algumas das telas principais desenvolvidas:
+
+| Página Inicial (Vitrine) | Detalhes do Perfume |
+| :---: | :---: |
+| <img src="docs/home.png" width="400"> | <img src="docs/product.png" width="400"> |
+
+| Painel do Administrador | Histórico de Pedidos |
+| :---: | :---: |
+| <img src="docs/admin.png" width="400"> | <img src="docs/orders.png" width="400"> |
+
+<br>
+
+<p align="center">
+  <b>Sacola de Compras (Carrinho)</b><br>
+  <img src="docs/cart.png" width="800">
+</p>
+
+---
+
 ## ⚙️ Instalação e Configuração
 
 Siga os passos abaixo para rodar a aplicação no seu ambiente local:
